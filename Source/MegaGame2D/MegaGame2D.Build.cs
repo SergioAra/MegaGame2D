@@ -7,8 +7,10 @@ public class MegaGame2D : ModuleRules
 	public MegaGame2D(ReadOnlyTargetRules Target) : base(Target)
 	{
 		PCHUsage = PCHUsageMode.UseExplicitOrSharedPCHs;
-	
-		PublicDependencyModuleNames.AddRange(new string[] { 
+
+        PrivateIncludePaths.Add("MegaGame2D");
+
+        PublicDependencyModuleNames.AddRange(new string[] { 
 			"Core", 
 			"CoreUObject", 
 			"Engine", 
