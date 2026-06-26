@@ -6,6 +6,7 @@
 
 #include "Camera/CameraComponent.h"
 #include "GameFramework/SpringArmComponent.h"
+#include "GameFramework/CharacterMovementComponent.h"
 
 AMGPlayerCharacter::AMGPlayerCharacter()
 {
@@ -15,6 +16,16 @@ AMGPlayerCharacter::AMGPlayerCharacter()
 
 	CameraComponent = CreateDefaultSubobject<UCameraComponent>(TEXT("CameraComponent"));
 	CameraComponent->SetupAttachment(SpringArmComponent);
+
+	JumpMaxHoldTime = 0.4f;
+
+	UCharacterMovementComponent* MovementComponent = GetCharacterMovement();
+
+	if (MovementComponent)
+	{
+		MovementComponent->AirControl = 1.f;
+		MovementComponent->FallingLateralFriction = 50.f;
+	}
 }
 
 void AMGPlayerCharacter::InputMove(const FVector2D& AxisValue)

@@ -31,6 +31,7 @@ void AMGPlayerController::SetupInputComponent()
 		EnhancedInputComponent->BindAction(InputActions->Move, ETriggerEvent::Completed, this, &AMGPlayerController::InputMove); // Added completed event since the triggered does not fire when releasing the stick
 		EnhancedInputComponent->BindAction(InputActions->Jump, ETriggerEvent::Started, this, &AMGPlayerController::StartInputJump);
 		EnhancedInputComponent->BindAction(InputActions->Jump, ETriggerEvent::Canceled, this, &AMGPlayerController::CancelInputJump);
+		EnhancedInputComponent->BindAction(InputActions->Jump, ETriggerEvent::Completed, this, &AMGPlayerController::CancelInputJump);
 
 #if !UE_BUILD_SHIPPING
 		// Input bindings for developer Mapping
