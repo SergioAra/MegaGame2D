@@ -2,11 +2,14 @@
 
 
 #include "Character/MGPlayerCharacter.h"
-
+#include "Projectile/MGProjectile.h"
+#include "PaperFlipbookComponent.h"
 
 #include "Camera/CameraComponent.h"
 #include "GameFramework/SpringArmComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
+
+static FName MuzzleSocketName(TEXT("Muzzle"));
 
 AMGPlayerCharacter::AMGPlayerCharacter()
 {
@@ -42,6 +45,39 @@ void AMGPlayerCharacter::InputMove(const FVector2D& AxisValue)
 void AMGPlayerCharacter::CancelInputJump()
 {
 	StopJumping();
+}
+
+void AMGPlayerCharacter::InputShoot()
+{
+	FActorSpawnParameters SpawnParams;
+	SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
+	SpawnParams.Owner = this;
+	SpawnParams.Instigator = this;
+
+	FVector ShootLocation = GetActorLocation();
+	UPaperFlipbookComponent* SpriteComponent = GetSprite();
+	if(SpriteComponent && SpriteComponent->DoesSocketExist(MuzzleSocketName))
+	{
+		ShootLocation = SpriteComponent->GetSocketLocation(MuzzleSocketName);
+	}
+	else
+	{
+		// Try to offset the shoot location to the front of the character if no socket is found
+		ShootLocation += GetActorForwardVector() * 60.f + GetActorUpVector() * -4.5f;
+	}
+
+	DrawDebugSphere(GetWorld(), ShootLocation, 5.f, 12, FColor::Red, false, 1.f);
+	GetWorld()->SpawnActor<AMGProjectile>(ProjectileClass, ShootLocation, GetActorRotation(), SpawnParams);
+
+
+	SetIsShooting(true);
+	GetWorldTimerManager().SetTimer(ShootingStateTimerHandle, this, &AMGPlayerCharacter::OnShootingStateFinished, ShootingStateTime);
+
+}
+
+void AMGPlayerCharacter::OnShootingStateFinished()
+{
+	SetIsShooting(false);
 }
 
 void AMGPlayerCharacter::StartInputJump()

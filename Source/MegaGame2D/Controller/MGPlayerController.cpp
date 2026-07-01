@@ -29,9 +29,8 @@ void AMGPlayerController::SetupInputComponent()
 	{
 		EnhancedInputComponent->BindAction(InputActions->Move, ETriggerEvent::Triggered, this, &AMGPlayerController::InputMove);
 		EnhancedInputComponent->BindAction(InputActions->Move, ETriggerEvent::Completed, this, &AMGPlayerController::InputMove); // Added completed event since the triggered does not fire when releasing the stick
-		EnhancedInputComponent->BindAction(InputActions->Jump, ETriggerEvent::Started, this, &AMGPlayerController::StartInputJump);
-		EnhancedInputComponent->BindAction(InputActions->Jump, ETriggerEvent::Canceled, this, &AMGPlayerController::CancelInputJump);
-		EnhancedInputComponent->BindAction(InputActions->Jump, ETriggerEvent::Completed, this, &AMGPlayerController::CancelInputJump);
+		EnhancedInputComponent->BindAction(InputActions->Jump, ETriggerEvent::Triggered, this, &AMGPlayerController::InputJump);
+		EnhancedInputComponent->BindAction(InputActions->Shoot, ETriggerEvent::Triggered, this, &AMGPlayerController::InputShoot);
 
 #if !UE_BUILD_SHIPPING
 		// Input bindings for developer Mapping
@@ -56,18 +55,26 @@ void AMGPlayerController::InputMove(const FInputActionValue& Value)
 	}
 }
 
-void AMGPlayerController::StartInputJump(const FInputActionValue & Value)
+void AMGPlayerController::InputJump(const FInputActionValue & Value)
 {
+	const bool bJumping = Value.Get<bool>();
 	if (PlayerCharacter)
 	{
-		PlayerCharacter->StartInputJump();
+		if (bJumping)
+		{
+			PlayerCharacter->StartInputJump();
+		}
+		else
+		{
+			PlayerCharacter->CancelInputJump();
+		}
 	}
 }
 
-void AMGPlayerController::CancelInputJump(const FInputActionValue& Value)
+void AMGPlayerController::InputShoot(const FInputActionValue& Value)
 {
 	if (PlayerCharacter)
 	{
-		PlayerCharacter->CancelInputJump();
+		PlayerCharacter->InputShoot();
 	}
 }

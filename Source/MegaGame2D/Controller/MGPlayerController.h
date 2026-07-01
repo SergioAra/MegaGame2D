@@ -39,9 +39,9 @@ protected:
 	void InputMove(const FInputActionValue& Value);
 
 	UFUNCTION()
-	void StartInputJump(const FInputActionValue& Value);
-	
+	void InputJump(const FInputActionValue& Value);
+
 	UFUNCTION()
-	void CancelInputJump(const FInputActionValue& Value);
+	void InputShoot(const FInputActionValue& Value);
 	
 };
