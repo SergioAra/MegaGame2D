@@ -31,6 +31,11 @@ AMGPlayerCharacter::AMGPlayerCharacter()
 	}
 }
 
+void AMGPlayerCharacter::RestoreEnergy(int32 Amount)
+{
+	CurrentEnergy = FMath::Min(CurrentEnergy + Amount, MaxEnergy);
+}
+
 void AMGPlayerCharacter::InputMove(const FVector2D& AxisValue)
 {
 	AddMovementInput(FVector(AxisValue.X, -AxisValue.Y, 0.f));
@@ -49,6 +54,28 @@ void AMGPlayerCharacter::CancelInputJump()
 
 void AMGPlayerCharacter::InputShoot()
 {
+	if (CurrentEnergy <= 0)
+	{
+		return;
+	}
+
+	int32 EnergyCost = 1;
+
+	AMGProjectile* DefaultProjectile = ProjectileClass.GetDefaultObject();
+	if (DefaultProjectile)
+	{
+		EnergyCost = DefaultProjectile->GetEnergyCost();
+	}
+
+	const int32 NewEnergy = CurrentEnergy - EnergyCost;
+
+	if(NewEnergy < 0)
+	{
+		return;
+	}
+
+	CurrentEnergy = NewEnergy;
+
 	FActorSpawnParameters SpawnParams;
 	SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
 	SpawnParams.Owner = this;
@@ -66,13 +93,20 @@ void AMGPlayerCharacter::InputShoot()
 		ShootLocation += GetActorForwardVector() * 60.f + GetActorUpVector() * -4.5f;
 	}
 
-	DrawDebugSphere(GetWorld(), ShootLocation, 5.f, 12, FColor::Red, false, 1.f);
+	//DrawDebugSphere(GetWorld(), ShootLocation, 5.f, 12, FColor::Red, false, 1.f);
 	GetWorld()->SpawnActor<AMGProjectile>(ProjectileClass, ShootLocation, GetActorRotation(), SpawnParams);
 
 
 	SetIsShooting(true);
 	GetWorldTimerManager().SetTimer(ShootingStateTimerHandle, this, &AMGPlayerCharacter::OnShootingStateFinished, ShootingStateTime);
 
+}
+
+void AMGPlayerCharacter::BeginPlay()
+{
+	Super::BeginPlay();
+
+	CurrentEnergy = MaxEnergy;
 }
 
 void AMGPlayerCharacter::OnShootingStateFinished()

@@ -2,4 +2,22 @@
 
 
 #include "Character/MGEnemy.h"
+#include "VFX/MGSpriteVFX.h"
 
+void AMGEnemy::Destroyed()
+{
+	Super::Destroyed();
+
+	PlayDestroyedFX();
+
+}
+
+void AMGEnemy::PlayDestroyedFX()
+{
+	if (DestroyedVFXClass)
+	{
+		FActorSpawnParameters SpawnParams;
+		SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
+		GetWorld()->SpawnActor<AMGSpriteVFX>(DestroyedVFXClass, GetActorLocation(), GetActorRotation(), SpawnParams);
+	}
+}

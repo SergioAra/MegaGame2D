@@ -4,11 +4,10 @@
 
 #include "CoreMinimal.h"
 #include "PaperZDCharacter.h"
+#include "MG2DDefinitions.h"
 #include "MG2DCharacter.generated.h"
 
-/**
- * 
- */
+
 UCLASS()
 class MEGAGAME2D_API AMG2DCharacter : public APaperZDCharacter
 {
@@ -17,5 +16,12 @@ class MEGAGAME2D_API AMG2DCharacter : public APaperZDCharacter
 public:
 
 	AMG2DCharacter();
+
+	FORCEINLINE EFactionType GetFactionType() const { return FactionType; }
+
+protected:
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "MG")
+	EFactionType FactionType = EFactionType::NONE;
 	
 };

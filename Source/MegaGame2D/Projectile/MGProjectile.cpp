@@ -3,13 +3,17 @@
 
 #include "Projectile/MGProjectile.h"
 #include "VFX/MGSpriteVFX.h"
+#include "Character/MGPlayerCharacter.h"
 
 #include "GameFramework/ProjectileMovementComponent.h"
 #include "Components/SphereComponent.h"
 #include "PaperFlipbookComponent.h"
+#include "Kismet/GameplayStatics.h"
+#include "Blueprint/WidgetLayoutLibrary.h"
 
 static FName SpriteCollisionProfileName(TEXT("NoCollision"));
 static FName CollisionProfileName(TEXT("Projectile"));
+static float LowDeltaTime(0.1f);
 
 // Sets default values
 AMGProjectile::AMGProjectile()
@@ -43,11 +47,34 @@ void AMGProjectile::BeginPlay()
 	if (CollisionComponent)
 	{
 		CollisionComponent->OnComponentHit.AddDynamic(this, &AMGProjectile::OnHit);
+		CollisionComponent->OnComponentBeginOverlap.AddDynamic(this, &AMGProjectile::OnBeginOverlap);	
 	}
+
+	AActor* OwningActor = GetOwner();
+
+	AMG2DCharacter* OwningCharacter = Cast<AMG2DCharacter>(OwningActor);
+	if (OwningCharacter)
+	{
+		FactionType = OwningCharacter->GetFactionType();
+		OwningPlayerCharacter = Cast<AMGPlayerCharacter>(OwningActor);
+	}
+
+	FTimerHandle LowTickTimerHandle;
+	GetWorldTimerManager().SetTimer(LowTickTimerHandle, this, &AMGProjectile::LowTick, LowDeltaTime, true);
 	
 }
 
 void AMGProjectile::Destroyed()
+{
+	Super::Destroyed();
+
+	if (OwningPlayerCharacter)
+	{
+		OwningPlayerCharacter->RestoreEnergy(EnergyCost);
+	}
+}
+
+void AMGProjectile::PlayHitFX()
 {
 	if (ImpactVFXClass)
 	{
@@ -55,11 +82,50 @@ void AMGProjectile::Destroyed()
 		SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
 		GetWorld()->SpawnActor<AMGSpriteVFX>(ImpactVFXClass, GetActorLocation(), GetActorRotation(), SpawnParams);
 	}
-
-	Super::Destroyed();
 }
 
 void AMGProjectile::OnHit(UPrimitiveComponent* HitComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit)
 {
+	PlayHitFX();
 	Destroy();
+}
+
+void AMGProjectile::OnBeginOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
+{
+	AMG2DCharacter* OverlappedCharacter = Cast<AMG2DCharacter>(OtherActor);
+
+	if (OverlappedCharacter && OverlappedCharacter != GetOwner())
+	{
+		EFactionType OverlappedFaction = OverlappedCharacter->GetFactionType();
+
+		if (OverlappedFaction == EFactionType::NONE || OverlappedFaction != FactionType)
+		{
+			PlayHitFX();
+			Destroy();
+			OverlappedCharacter->Destroy();
+		}
+	}
+}
+
+void AMGProjectile::LowTick()
+{
+	switch (CullingType)
+	{
+	case ECullingType::SCREEN:
+		{
+			APlayerController* PC = UGameplayStatics::GetPlayerController(this, 0);
+			FVector2D OutLocation;
+			UGameplayStatics::ProjectWorldToScreen(PC, GetActorLocation(), OutLocation);
+			FVector2D ViewportSize = UWidgetLayoutLibrary::GetViewportSize(this);
+
+			if (OutLocation.X < 0.f || OutLocation.X > ViewportSize.X || OutLocation.Y < 0.f || OutLocation.Y > ViewportSize.Y)
+			{
+				Destroy();
+			}
+		}
+		break;
+
+	case ECullingType::TIME:
+		break;
+	}
 }

@@ -6,12 +6,22 @@
 #include "Character/MG2DCharacter.h"
 #include "MGEnemy.generated.h"
 
-/**
- * 
- */
+class AMGSpriteVFX;
+
 UCLASS()
 class MEGAGAME2D_API AMGEnemy : public AMG2DCharacter
 {
 	GENERATED_BODY()
+
+public:
+
+	virtual void Destroyed() override;
+
+protected:
+
+	void PlayDestroyedFX();
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "MG|VFX")
+	TSubclassOf<AMGSpriteVFX> DestroyedVFXClass = nullptr;
 	
 };

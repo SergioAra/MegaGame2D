@@ -23,12 +23,16 @@ public:
 	FORCEINLINE bool IsShooting() const { return bIsShooting; }
 	FORCEINLINE bool SetIsShooting(bool bInIsShooting) { return bIsShooting = bInIsShooting; }
 
+	void RestoreEnergy(int32 Amount);
+
 	void InputMove(const FVector2D& AxisValue);
 	void StartInputJump();
 	void CancelInputJump();
 	void InputShoot();
 
 protected:
+
+	virtual void BeginPlay() override;
 
 	UFUNCTION()
 	void OnShootingStateFinished();
@@ -49,9 +53,12 @@ protected:
 	TSubclassOf<AMGProjectile> ChargedProjectileClass;
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "MG|Shooting")
-	float ShootingStateTime = 0.4;
+	float ShootingStateTime = 0.4f;
 
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "MG|Shooting")
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "MG|Stats")
+	int32 MaxEnergy = 3;
+
+	UPROPERTY(Transient, VisibleAnywhere, BlueprintReadOnly, Category = "MG|Shooting")
 	float CurrentShootingStateTime = 0.f;
 
 	UPROPERTY(Transient)
@@ -59,4 +66,7 @@ protected:
 
 	UPROPERTY(Transient, VisibleAnywhere, Category = "MG|State")
 	bool bIsShooting = false;
+
+	UPROPERTY(Transient, VisibleAnywhere, Category = "MG|State")
+	int32 CurrentEnergy = 0;
 };
