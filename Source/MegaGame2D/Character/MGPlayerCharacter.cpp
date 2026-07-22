@@ -3,13 +3,21 @@
 
 #include "Character/MGPlayerCharacter.h"
 #include "Projectile/MGProjectile.h"
-#include "PaperFlipbookComponent.h"
+#include "Character/MGEnemy.h"
+#include "Controller/MGPlayerController.h"
+#include "Component/MGHealthComponent.h"
 
+#include "PaperFlipbookComponent.h"
 #include "Camera/CameraComponent.h"
 #include "GameFramework/SpringArmComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
+#include "Components/CapsuleComponent.h"
+#include "Kismet/GameplayStatics.h"
+#include "PaperZDAnimationComponent.h"
+#include "PaperZDAnimInstance.h"
 
 static FName MuzzleSocketName(TEXT("Muzzle"));
+static FName AnimationJumpStunName(TEXT("JumpStun"));
 
 AMGPlayerCharacter::AMGPlayerCharacter()
 {
@@ -38,12 +46,20 @@ void AMGPlayerCharacter::RestoreEnergy(int32 Amount)
 
 void AMGPlayerCharacter::InputMove(const FVector2D& AxisValue)
 {
+	if (bIsStunned)
+	{
+		return;
+	}
+
 	AddMovementInput(FVector(AxisValue.X, -AxisValue.Y, 0.f));
 
 	if (AxisValue.X != 0.f)
 	{
 		const float Yaw = AxisValue.X > 0.f ? 0.f : 180.f;
-		GetController()->SetControlRotation(FRotator(0.f, Yaw, 0.f));
+		if (PlayerController)
+		{
+			PlayerController->SetControlRotation(FRotator(0.f, Yaw, 0.f));
+		}
 	}
 }
 
@@ -54,6 +70,11 @@ void AMGPlayerCharacter::CancelInputJump()
 
 void AMGPlayerCharacter::InputShoot()
 {
+	if (bIsStunned)
+	{
+		return;
+	}
+
 	if (CurrentEnergy <= 0)
 	{
 		return;
@@ -102,16 +123,136 @@ void AMGPlayerCharacter::InputShoot()
 
 }
 
+void AMGPlayerCharacter::PossessedBy(AController* NewController)
+{
+	Super::PossessedBy(NewController);
+	PlayerController = Cast<AMGPlayerController>(NewController);
+}
+
+void AMGPlayerCharacter::UnPossessed()
+{
+	Super::UnPossessed();
+	PlayerController = nullptr;
+}
+
+void AMGPlayerCharacter::OnDamageTaken(AActor* DamageSource)
+{
+	Super::OnDamageTaken(DamageSource);
+	StartInvincibility();
+	GetWorldTimerManager().SetTimer(InvincibleStateTimerHandle, this, &AMGPlayerCharacter::EndInvincibility, InvincibilityDuration);
+
+	StartStun();
+
+	if (DamageSource)
+	{
+		UCharacterMovementComponent* MovementComponent = GetCharacterMovement();
+		if (MovementComponent)
+		{
+			MovementComponent->FallingLateralFriction = 0.f;
+		}
+		const float LaunchHorizontalDirection = ((GetActorLocation() - DamageSource->GetActorLocation()).X < 0) ? -1.f : 1.f;
+		LaunchCharacter(FVector(LaunchHorizontalDirection * DamageHorizontalLaunchForce, 0.f, DamageVerticalLaunchForce), true, true);
+	}
+
+}
+
+void AMGPlayerCharacter::StartStun()
+{
+	UPaperZDAnimationComponent* AnimationComp = GetAnimationComponent();
+	if (AnimationComp)
+	{
+		UPaperZDAnimInstance* AnimInstanceComp = AnimationComp->GetAnimInstance();
+		if (AnimInstanceComp)
+		{
+			AnimInstanceComp->JumpToNode(AnimationJumpStunName);
+		}
+	}
+
+	GetWorldTimerManager().SetTimer(StunStateTimerHandle, this, &AMGPlayerCharacter::EndStun, StunDuration);
+
+	bIsStunned = true;
+}
+
+void AMGPlayerCharacter::EndStun()
+{
+	bIsStunned = false;
+
+	UCharacterMovementComponent* MovementComponent = GetCharacterMovement();
+	if (MovementComponent)
+	{
+		MovementComponent->FallingLateralFriction = DefaultFallingLateralFriction;
+	}
+}
+
+void AMGPlayerCharacter::StartInvincibility()
+{
+	if (HealthComponent)
+	{
+		HealthComponent->SetIsInvincible(true);
+	}
+
+	OnInvincibilityVFX();
+}
+
+void AMGPlayerCharacter::EndInvincibility()
+{
+	OnEndInvincibility();
+
+	if (HealthComponent)
+	{
+		HealthComponent->SetIsInvincible(false);
+	}
+
+	for (AMGEnemy* Enemy : OverlappingEnemies)
+	{
+		if (Enemy)
+		{
+			UGameplayStatics::ApplyDamage(this, Enemy->GetContactDamage(), Enemy->GetInstigatorController(), Enemy, nullptr);
+		}
+	}
+}
+
 void AMGPlayerCharacter::BeginPlay()
 {
 	Super::BeginPlay();
 
 	CurrentEnergy = MaxEnergy;
+	UCapsuleComponent* CapsuleComp = GetCapsuleComponent();
+	if (CapsuleComp)
+	{
+		CapsuleComp->OnComponentBeginOverlap.AddDynamic(this, &AMGPlayerCharacter::OnBeginOverlap);
+		CapsuleComp->OnComponentEndOverlap.AddDynamic(this, &AMGPlayerCharacter::OnEndOverlap);
+	}
+
+	UCharacterMovementComponent* MovementComponent = GetCharacterMovement();
+	if (MovementComponent)
+	{
+		DefaultFallingLateralFriction = MovementComponent->FallingLateralFriction;
+	}
 }
 
 void AMGPlayerCharacter::OnShootingStateFinished()
 {
 	SetIsShooting(false);
+}
+
+void AMGPlayerCharacter::OnBeginOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
+{
+	AMGEnemy* Enemy = Cast<AMGEnemy>(OtherActor);
+	if (Enemy && Enemy->GetCapsuleComponent() == OtherComp)
+	{
+		UGameplayStatics::ApplyDamage(this, Enemy->GetContactDamage(), Enemy->GetInstigatorController(), Enemy, nullptr);
+		OverlappingEnemies.AddUnique(Enemy);
+	}
+}
+
+void AMGPlayerCharacter::OnEndOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex)
+{
+	AMGEnemy* Enemy = Cast<AMGEnemy>(OtherActor);
+	if (Enemy && Enemy->GetCapsuleComponent() == OtherComp)
+	{
+		OverlappingEnemies.Remove(Enemy);
+	}
 }
 
 void AMGPlayerCharacter::StartInputJump()

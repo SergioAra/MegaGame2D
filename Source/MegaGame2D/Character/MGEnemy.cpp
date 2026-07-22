@@ -4,12 +4,10 @@
 #include "Character/MGEnemy.h"
 #include "VFX/MGSpriteVFX.h"
 
-void AMGEnemy::Destroyed()
+void AMGEnemy::OnHealthDepleated()
 {
-	Super::Destroyed();
-
+	Super::OnHealthDepleated();
 	PlayDestroyedFX();
-
 }
 
 void AMGEnemy::PlayDestroyedFX()

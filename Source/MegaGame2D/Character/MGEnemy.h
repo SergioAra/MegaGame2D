@@ -15,13 +15,18 @@ class MEGAGAME2D_API AMGEnemy : public AMG2DCharacter
 
 public:
 
-	virtual void Destroyed() override;
+	FORCEINLINE float GetContactDamage() const { return ContactDamage; }
 
 protected:
+
+	virtual void OnHealthDepleated() override;
 
 	void PlayDestroyedFX();
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "MG|VFX")
 	TSubclassOf<AMGSpriteVFX> DestroyedVFXClass = nullptr;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "MG|Damage")
+	float ContactDamage = 1.f;
 	
 };

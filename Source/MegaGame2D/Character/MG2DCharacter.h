@@ -7,6 +7,8 @@
 #include "MG2DDefinitions.h"
 #include "MG2DCharacter.generated.h"
 
+class UMGHealthComponent;
+
 
 UCLASS()
 class MEGAGAME2D_API AMG2DCharacter : public APaperZDCharacter
@@ -21,7 +23,30 @@ public:
 
 protected:
 
+	virtual void BeginPlay() override;
+
+	UFUNCTION()
+	virtual void OnHealthDepleated();
+
+	UFUNCTION()
+	virtual void OnDamageTaken(AActor* DamageSource);
+
+	UFUNCTION(BlueprintImplementableEvent)
+	void OnDamageVFX();
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "MG")
+	TObjectPtr<UMGHealthComponent> HealthComponent;
+
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "MG")
 	EFactionType FactionType = EFactionType::NONE;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "MG|VFX")
+	float DamageVFXPlayRate = 1.0f;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "MG|VFX")
+	float DamageVFXScale = 1.0f;
+
+	UPROPERTY(Transient, VisibleInstanceOnly, BlueprintReadOnly, Category = "MG")
+	TObjectPtr<UMaterialInstanceDynamic> DynamicMaterialInstance;
 	
 };

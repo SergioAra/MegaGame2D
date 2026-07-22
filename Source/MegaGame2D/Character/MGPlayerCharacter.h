@@ -9,6 +9,8 @@
 class UCameraComponent;
 class USpringArmComponent;
 class AMGProjectile;
+class AMGPlayerController;
+class AMGEnemy;
 
 UCLASS()
 class MEGAGAME2D_API AMGPlayerCharacter : public AMG2DCharacter
@@ -30,12 +32,39 @@ public:
 	void CancelInputJump();
 	void InputShoot();
 
+	virtual void PossessedBy(AController* NewController) override;
+	virtual void UnPossessed() override;
+
+	virtual void OnDamageTaken(AActor* DamageSource) override;
+
+	void StartStun();
+
+	UFUNCTION()
+	void EndStun();
+
+	void StartInvincibility();
+
+	UFUNCTION()
+	void EndInvincibility();
+
+	UFUNCTION(BlueprintImplementableEvent)
+	void OnEndInvincibility();
+
+	UFUNCTION(BlueprintImplementableEvent)
+	void OnInvincibilityVFX();
+
 protected:
 
 	virtual void BeginPlay() override;
 
 	UFUNCTION()
 	void OnShootingStateFinished();
+
+	UFUNCTION()
+	void OnBeginOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult);
+
+	UFUNCTION()
+	void OnEndOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex);
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "MG")
 	TObjectPtr<USpringArmComponent> SpringArmComponent;
@@ -58,15 +87,48 @@ protected:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "MG|Stats")
 	int32 MaxEnergy = 3;
 
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "MG|Stats")
+	float InvincibilityDuration = 0.5f;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "MG|Stats")
+	float StunDuration = 0.4f;
+
 	UPROPERTY(Transient, VisibleAnywhere, BlueprintReadOnly, Category = "MG|Shooting")
 	float CurrentShootingStateTime = 0.f;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "MG|VFX")
+	float InvincibilityFlickerInterval = 0.12f;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "MG|Launch")
+	float DamageHorizontalLaunchForce = 1200.f;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "MG|Launch")
+	float DamageVerticalLaunchForce = 1200.f;
 
 	UPROPERTY(Transient)
 	FTimerHandle ShootingStateTimerHandle;
 
-	UPROPERTY(Transient, VisibleAnywhere, Category = "MG|State")
+	UPROPERTY(Transient)
+	FTimerHandle InvincibleStateTimerHandle;
+
+	UPROPERTY(Transient)
+	FTimerHandle StunStateTimerHandle;
+
+	UPROPERTY(Transient, VisibleAnywhere, BlueprintReadOnly, Category = "MG|State")
+	TObjectPtr<AMGPlayerController> PlayerController = nullptr;
+
+	UPROPERTY(Transient, VisibleAnywhere, BlueprintReadOnly, Category = "MG|State")
 	bool bIsShooting = false;
 
-	UPROPERTY(Transient, VisibleAnywhere, Category = "MG|State")
+	UPROPERTY(Transient, VisibleAnywhere, BlueprintReadOnly, Category = "MG|State")
+	bool bIsStunned = false;
+
+	UPROPERTY(Transient, VisibleAnywhere, BlueprintReadOnly, Category = "MG|State")
 	int32 CurrentEnergy = 0;
+
+	UPROPERTY(Transient, VisibleAnywhere, BlueprintReadOnly, Category = "MG|State")
+	TArray<AMGEnemy*> OverlappingEnemies;
+
+	UPROPERTY(Transient, VisibleAnywhere, BlueprintReadOnly, Category = "MG|State")
+	float DefaultFallingLateralFriction = 0.f;
 };

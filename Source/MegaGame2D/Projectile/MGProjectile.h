@@ -68,6 +68,9 @@ protected:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "MG|Projectile", meta = (ClampMin = 0, UIMin = 0))
 	int32 EnergyCost = 1;
 
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "MG|Projectile")
+	float Damage = 1;
+
 	UPROPERTY(Transient, VisibleInstanceOnly, BlueprintReadOnly, Category = "MG|Projectile")
 	TObjectPtr<AMGPlayerCharacter> OwningPlayerCharacter = nullptr;
 

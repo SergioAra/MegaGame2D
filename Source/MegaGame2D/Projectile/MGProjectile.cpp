@@ -102,7 +102,7 @@ void AMGProjectile::OnBeginOverlap(UPrimitiveComponent* OverlappedComponent, AAc
 		{
 			PlayHitFX();
 			Destroy();
-			OverlappedCharacter->Destroy();
+			UGameplayStatics::ApplyDamage(OverlappedCharacter, Damage, GetInstigatorController(), this, nullptr);
 		}
 	}
 }
