@@ -9,6 +9,7 @@
 class UInputMappingContext;
 class UMGInputData;
 class AMGPlayerCharacter;
+struct FInputActionInstance;
 
 UCLASS()
 class MEGAGAME2D_API AMGPlayerController : public APlayerController
@@ -42,6 +43,9 @@ protected:
 	void InputJump(const FInputActionValue& Value);
 
 	UFUNCTION()
-	void InputShoot(const FInputActionValue& Value);
+	void InputShoot(const FInputActionInstance& Instance);
+
+	UFUNCTION()
+	void InputShootHeld(const FInputActionInstance& Instance);
 	
 };

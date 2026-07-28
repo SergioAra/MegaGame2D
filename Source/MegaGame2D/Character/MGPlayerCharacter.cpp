@@ -68,21 +68,67 @@ void AMGPlayerCharacter::CancelInputJump()
 	StopJumping();
 }
 
-void AMGPlayerCharacter::InputShoot()
+void AMGPlayerCharacter::InputShootPressed()
 {
+	bCancelNextCharge = false;
+}
+
+void AMGPlayerCharacter::InputShootHeld(float InHoldTime)
+{
+	if (bCancelNextCharge || bIsStunned || CurrentEnergy <= 0 || InHoldTime < PartialChargeProjectileTime)
+	{
+		CurrentChargeFlashTime = 0.f;
+	}
+	else
+	{
+		CurrentChargeFlashTime += GetWorld()->GetDeltaSeconds();
+
+		if (CurrentChargeFlashTime >= ChargeFlashInterval)
+		{
+			CurrentChargeFlashTime = 0.f;
+			if (InHoldTime >= ChargedProjectileTime)
+			{
+				OnFlashFullCharge();
+			}
+			else
+			{
+				OnFlashPartialCharge();
+			}
+		}
+	}
+}
+
+void AMGPlayerCharacter::InputShootReleased(float InHoldTime)
+{
+	if(bCancelNextCharge)
+	{
+		bCancelNextCharge = false;
+		return;
+	}
+
 	if (bIsStunned)
 	{
 		return;
-	}
+	} 
 
 	if (CurrentEnergy <= 0)
 	{
 		return;
 	}
 
-	int32 EnergyCost = 1;
+	TSubclassOf<AMGProjectile> ProjectileClassToSpawn = ProjectileClass;
 
-	AMGProjectile* DefaultProjectile = ProjectileClass.GetDefaultObject();
+	if (InHoldTime >= ChargedProjectileTime)
+	{
+		ProjectileClassToSpawn = ChargedProjectileClass;
+	}
+	else if (InHoldTime >= PartialChargeProjectileTime)
+	{
+		ProjectileClassToSpawn = PartialChargeProjectileClass;
+	}
+
+	int32 EnergyCost = 1;
+	AMGProjectile* DefaultProjectile = ProjectileClassToSpawn.GetDefaultObject();
 	if (DefaultProjectile)
 	{
 		EnergyCost = DefaultProjectile->GetEnergyCost();
@@ -97,6 +143,15 @@ void AMGPlayerCharacter::InputShoot()
 
 	CurrentEnergy = NewEnergy;
 
+	SpawnProjectile(ProjectileClassToSpawn);
+
+	SetIsShooting(true);
+	GetWorldTimerManager().SetTimer(ShootingStateTimerHandle, this, &AMGPlayerCharacter::OnShootingStateFinished, ShootingStateTime);
+
+}
+
+void AMGPlayerCharacter::SpawnProjectile(TSubclassOf<AMGProjectile>& ProjectileClassToSpawn)
+{
 	FActorSpawnParameters SpawnParams;
 	SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
 	SpawnParams.Owner = this;
@@ -104,7 +159,7 @@ void AMGPlayerCharacter::InputShoot()
 
 	FVector ShootLocation = GetActorLocation();
 	UPaperFlipbookComponent* SpriteComponent = GetSprite();
-	if(SpriteComponent && SpriteComponent->DoesSocketExist(MuzzleSocketName))
+	if (SpriteComponent && SpriteComponent->DoesSocketExist(MuzzleSocketName))
 	{
 		ShootLocation = SpriteComponent->GetSocketLocation(MuzzleSocketName);
 	}
@@ -115,12 +170,7 @@ void AMGPlayerCharacter::InputShoot()
 	}
 
 	//DrawDebugSphere(GetWorld(), ShootLocation, 5.f, 12, FColor::Red, false, 1.f);
-	GetWorld()->SpawnActor<AMGProjectile>(ProjectileClass, ShootLocation, GetActorRotation(), SpawnParams);
-
-
-	SetIsShooting(true);
-	GetWorldTimerManager().SetTimer(ShootingStateTimerHandle, this, &AMGPlayerCharacter::OnShootingStateFinished, ShootingStateTime);
-
+	GetWorld()->SpawnActor<AMGProjectile>(ProjectileClassToSpawn, ShootLocation, GetActorRotation(), SpawnParams);
 }
 
 void AMGPlayerCharacter::PossessedBy(AController* NewController)
@@ -138,6 +188,9 @@ void AMGPlayerCharacter::UnPossessed()
 void AMGPlayerCharacter::OnDamageTaken(AActor* DamageSource)
 {
 	Super::OnDamageTaken(DamageSource);
+
+	bCancelNextCharge = true;
+
 	StartInvincibility();
 	GetWorldTimerManager().SetTimer(InvincibleStateTimerHandle, this, &AMGPlayerCharacter::EndInvincibility, InvincibilityDuration);
 

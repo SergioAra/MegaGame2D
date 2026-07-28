@@ -7,6 +7,7 @@
 
 #include "EnhancedInputComponent.h"
 #include "EnhancedInputSubsystems.h"
+//#include "InputAction.h"
 
 void AMGPlayerController::SetupInputComponent()
 {
@@ -31,6 +32,7 @@ void AMGPlayerController::SetupInputComponent()
 		EnhancedInputComponent->BindAction(InputActions->Move, ETriggerEvent::Completed, this, &AMGPlayerController::InputMove); // Added completed event since the triggered does not fire when releasing the stick
 		EnhancedInputComponent->BindAction(InputActions->Jump, ETriggerEvent::Triggered, this, &AMGPlayerController::InputJump);
 		EnhancedInputComponent->BindAction(InputActions->Shoot, ETriggerEvent::Triggered, this, &AMGPlayerController::InputShoot);
+		EnhancedInputComponent->BindAction(InputActions->Shoot, ETriggerEvent::Ongoing, this, &AMGPlayerController::InputShootHeld);
 
 #if !UE_BUILD_SHIPPING
 		// Input bindings for developer Mapping
@@ -71,10 +73,30 @@ void AMGPlayerController::InputJump(const FInputActionValue & Value)
 	}
 }
 
-void AMGPlayerController::InputShoot(const FInputActionValue& Value)
+void AMGPlayerController::InputShoot(const FInputActionInstance& Instance)
+{
+	const bool bIsShootingHeld = Instance.GetValue().Get<bool>();
+
+	if (bIsShootingHeld)
+	{
+		if (PlayerCharacter)
+		{
+			PlayerCharacter->InputShootPressed();
+		}
+	}
+	else
+	{
+		if (PlayerCharacter)
+		{
+			PlayerCharacter->InputShootReleased(Instance.GetElapsedTime());
+		}
+	}
+}
+
+void AMGPlayerController::InputShootHeld(const FInputActionInstance& Instance)
 {
 	if (PlayerCharacter)
 	{
-		PlayerCharacter->InputShoot();
+		PlayerCharacter->InputShootHeld(Instance.GetElapsedTime());
 	}
 }

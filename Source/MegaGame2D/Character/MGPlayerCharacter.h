@@ -30,7 +30,11 @@ public:
 	void InputMove(const FVector2D& AxisValue);
 	void StartInputJump();
 	void CancelInputJump();
-	void InputShoot();
+	void InputShootPressed();
+	void InputShootHeld(float InHoldTime);
+	void InputShootReleased(float InHoldTime);
+
+	void SpawnProjectile(TSubclassOf<AMGProjectile>& ProjectileClassToSpawn);
 
 	virtual void PossessedBy(AController* NewController) override;
 	virtual void UnPossessed() override;
@@ -52,6 +56,12 @@ public:
 
 	UFUNCTION(BlueprintImplementableEvent)
 	void OnInvincibilityVFX();
+
+	UFUNCTION(BlueprintImplementableEvent)
+	void OnFlashPartialCharge();
+
+	UFUNCTION(BlueprintImplementableEvent)
+	void OnFlashFullCharge();
 
 protected:
 
@@ -76,13 +86,22 @@ protected:
 	TSubclassOf<AMGProjectile> ProjectileClass;
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "MG|Shooting|Projectile")
-	TSubclassOf<AMGProjectile> SemiChargedProjectileClass;
+	TSubclassOf<AMGProjectile> PartialChargeProjectileClass;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "MG|Shooting|Projectile")
+	float PartialChargeProjectileTime = 0.8f;
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "MG|Shooting|Projectile")
 	TSubclassOf<AMGProjectile> ChargedProjectileClass;
 
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "MG|Shooting|Projectile")
+	float ChargedProjectileTime = 1.8f;
+
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "MG|Shooting")
 	float ShootingStateTime = 0.4f;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "MG|Shooting")
+	float ChargeFlashInterval = 0.2f;
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "MG|Stats")
 	int32 MaxEnergy = 3;
@@ -96,13 +115,28 @@ protected:
 	UPROPERTY(Transient, VisibleAnywhere, BlueprintReadOnly, Category = "MG|Shooting")
 	float CurrentShootingStateTime = 0.f;
 
+	UPROPERTY(Transient, VisibleAnywhere, BlueprintReadOnly, Category = "MG|Shooting")
+	float CurrentChargeFlashTime = 0.f;
+
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "MG|VFX")
 	float InvincibilityFlickerInterval = 0.12f;
 
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "MG|Launch")
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "MG|VFX")
+	float PartialChargeVFXPlayRate = 8.f;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "MG|VFX")
+	float PartialChargeVFXScale = 10.f;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "MG|VFX")
+	float FullChargeVFXPlayRate = 8.f;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "MG|VFX")
+	float FullChargeVFXScale = 10.f;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "MG|Knockback")
 	float DamageHorizontalLaunchForce = 1200.f;
 
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "MG|Launch")
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "MG|Knockback")
 	float DamageVerticalLaunchForce = 1200.f;
 
 	UPROPERTY(Transient)
@@ -122,6 +156,9 @@ protected:
 
 	UPROPERTY(Transient, VisibleAnywhere, BlueprintReadOnly, Category = "MG|State")
 	bool bIsStunned = false;
+
+	UPROPERTY(Transient, VisibleAnywhere, BlueprintReadOnly, Category = "MG|State")
+	bool bCancelNextCharge = false;
 
 	UPROPERTY(Transient, VisibleAnywhere, BlueprintReadOnly, Category = "MG|State")
 	int32 CurrentEnergy = 0;
