@@ -6,6 +6,7 @@
 #include "Character/MGEnemy.h"
 #include "Controller/MGPlayerController.h"
 #include "Component/MGHealthComponent.h"
+#include "RootMovement/AsyncRootMovement.h"
 
 #include "PaperFlipbookComponent.h"
 #include "Camera/CameraComponent.h"
@@ -18,6 +19,7 @@
 
 static FName MuzzleSocketName(TEXT("Muzzle"));
 static FName AnimationJumpStunName(TEXT("JumpStun"));
+static float LowDeltaTime(0.1f);
 
 AMGPlayerCharacter::AMGPlayerCharacter()
 {
@@ -51,11 +53,23 @@ void AMGPlayerCharacter::InputMove(const FVector2D& AxisValue)
 		return;
 	}
 
-	AddMovementInput(FVector(AxisValue.X, -AxisValue.Y, 0.f));
+	LastInputDir = AxisValue;
 
-	if (AxisValue.X != 0.f)
+	AddMovementInput(FVector(LastInputDir.X, -LastInputDir.Y, 0.f));
+
+	if (bIsGroundSliding)
 	{
-		const float Yaw = AxisValue.X > 0.f ? 0.f : 180.f;
+		return;
+	}
+
+	UpdateControlRotation();
+}
+
+void AMGPlayerCharacter::UpdateControlRotation()
+{
+	if (LastInputDir.X != 0.f)
+	{
+		const float Yaw = LastInputDir.X > 0.f ? 0.f : 180.f;
 		if (PlayerController)
 		{
 			PlayerController->SetControlRotation(FRotator(0.f, Yaw, 0.f));
@@ -75,7 +89,7 @@ void AMGPlayerCharacter::InputShootPressed()
 
 void AMGPlayerCharacter::InputShootHeld(float InHoldTime)
 {
-	if (bCancelNextCharge || bIsStunned || CurrentEnergy <= 0 || InHoldTime < PartialChargeProjectileTime)
+	if (bCancelNextCharge || bIsStunned || bIsGroundSliding || CurrentEnergy <= 0 || InHoldTime < PartialChargeProjectileTime)
 	{
 		CurrentChargeFlashTime = 0.f;
 	}
@@ -103,6 +117,11 @@ void AMGPlayerCharacter::InputShootReleased(float InHoldTime)
 	if(bCancelNextCharge)
 	{
 		bCancelNextCharge = false;
+		return;
+	}
+
+	if (bIsGroundSliding)
+	{
 		return;
 	}
 
@@ -150,6 +169,48 @@ void AMGPlayerCharacter::InputShootReleased(float InHoldTime)
 
 }
 
+void AMGPlayerCharacter::InputSlide()
+{
+	if (bIsStunned)
+	{
+		return;
+	}
+
+	if (bIsWallSliding)
+	{
+		return;
+	}
+
+	if (bIsGroundSliding)
+	{
+		return;
+	}
+
+	UCharacterMovementComponent* MovementComponent = GetCharacterMovement();
+	if (!MovementComponent)
+	{
+		return;
+	}
+
+	if (!MovementComponent->IsMovingOnGround())
+	{
+		return;
+	}
+
+	// TODO: Implemet Slide cooldown
+
+	AsyncSlideMovement = UAsyncRootMovement::AsyncRootMovement(this, GetCharacterMovement(), GetActorForwardVector(), GroundSlideStrength, GroundSlideDuration, false, nullptr, ERootMotionFinishVelocityMode::MaintainLastRootMotionVelocity, FVector::ZeroVector, 0.f, true);
+
+	if (AsyncSlideMovement)
+	{
+		bIsGroundSliding = true;
+		bCancelNextCharge = true;
+		AsyncSlideMovement->OnComplete.AddDynamic(this, &AMGPlayerCharacter::OnSlideComplete);
+		AsyncSlideMovement->OnFail.AddDynamic(this, &AMGPlayerCharacter::OnSlideFailed);
+		AsyncSlideMovement->Activate();
+	}
+}
+
 void AMGPlayerCharacter::SpawnProjectile(TSubclassOf<AMGProjectile>& ProjectileClassToSpawn)
 {
 	FActorSpawnParameters SpawnParams;
@@ -165,12 +226,13 @@ void AMGPlayerCharacter::SpawnProjectile(TSubclassOf<AMGProjectile>& ProjectileC
 	}
 	else
 	{
-		// Try to offset the shoot location to the front of the character if no socket is found
+		// Try to offset the shoot location to the front of the character if no socket is found. Might be interesting to try to delay the spawn until the animation is ready
 		ShootLocation += GetActorForwardVector() * 60.f + GetActorUpVector() * -4.5f;
 	}
 
 	//DrawDebugSphere(GetWorld(), ShootLocation, 5.f, 12, FColor::Red, false, 1.f);
-	GetWorld()->SpawnActor<AMGProjectile>(ProjectileClassToSpawn, ShootLocation, GetActorRotation(), SpawnParams);
+	FVector ProjectileDirection = GetActorForwardVector() * (bIsWallSliding ? -1.f : 1.f);
+	GetWorld()->SpawnActor<AMGProjectile>(ProjectileClassToSpawn, ShootLocation, ProjectileDirection.Rotation(), SpawnParams);
 }
 
 void AMGPlayerCharacter::PossessedBy(AController* NewController)
@@ -196,13 +258,14 @@ void AMGPlayerCharacter::OnDamageTaken(AActor* DamageSource)
 
 	StartStun();
 
+	if (AsyncSlideMovement)
+	{
+		AsyncSlideMovement->Cancel();
+	}
+
 	if (DamageSource)
 	{
-		UCharacterMovementComponent* MovementComponent = GetCharacterMovement();
-		if (MovementComponent)
-		{
-			MovementComponent->FallingLateralFriction = 0.f;
-		}
+		RemoveFallingLateralFriction(StunDuration);
 		const float LaunchHorizontalDirection = ((GetActorLocation() - DamageSource->GetActorLocation()).X < 0) ? -1.f : 1.f;
 		LaunchCharacter(FVector(LaunchHorizontalDirection * DamageHorizontalLaunchForce, 0.f, DamageVerticalLaunchForce), true, true);
 	}
@@ -229,12 +292,6 @@ void AMGPlayerCharacter::StartStun()
 void AMGPlayerCharacter::EndStun()
 {
 	bIsStunned = false;
-
-	UCharacterMovementComponent* MovementComponent = GetCharacterMovement();
-	if (MovementComponent)
-	{
-		MovementComponent->FallingLateralFriction = DefaultFallingLateralFriction;
-	}
 }
 
 void AMGPlayerCharacter::StartInvincibility()
@@ -282,6 +339,19 @@ void AMGPlayerCharacter::BeginPlay()
 	{
 		DefaultFallingLateralFriction = MovementComponent->FallingLateralFriction;
 	}
+
+	FTimerHandle LowTickTimerHandle;
+	GetWorldTimerManager().SetTimer(LowTickTimerHandle, this, &AMGPlayerCharacter::LowTick, LowDeltaTime, true);
+}
+
+void AMGPlayerCharacter::OnWalkingOffLedge_Implementation(const FVector& PreviousFloorImpactNormal, const FVector& PreviousFloorContactNormal, const FVector& PreviousLocation, float TimeDelta)
+{
+	Super::OnWalkingOffLedge_Implementation(PreviousFloorImpactNormal, PreviousFloorContactNormal, PreviousLocation, TimeDelta);
+
+	if (bCancelGroundSlideOnLedges && AsyncSlideMovement)
+	{
+		AsyncSlideMovement->Cancel();
+	}
 }
 
 void AMGPlayerCharacter::OnShootingStateFinished()
@@ -308,7 +378,132 @@ void AMGPlayerCharacter::OnEndOverlap(UPrimitiveComponent* OverlappedComponent, 
 	}
 }
 
+void AMGPlayerCharacter::LowTick()
+{
+
+	const FVector CurrentForwardVector = GetActorForwardVector();
+	const float HorizontalMovementProd = CurrentForwardVector.X * LastInputDir.X;
+
+	bIsWallSliding = CheckPressingAgainsWall(HorizontalMovementProd, CurrentForwardVector);
+
+	CheckInputSlideCancel(HorizontalMovementProd);
+}
+
+void AMGPlayerCharacter::CheckInputSlideCancel(const float HorizontalMovementProd)
+{
+	if (bIsGroundSliding && HorizontalMovementProd < 0.f && AsyncSlideMovement)
+	{
+		AsyncSlideMovement->Cancel();
+	}
+}
+
+bool AMGPlayerCharacter::CheckPressingAgainsWall(const float HorizontalMovementProd, const FVector& CurrentForwardVector)
+{
+	if (HorizontalMovementProd <= 0.f)
+	{
+		return false;
+	}
+
+	UCharacterMovementComponent* MovementComponent = GetCharacterMovement();
+	if (!MovementComponent)
+	{
+		return false;
+	}
+
+	if (!MovementComponent->IsFalling())
+	{
+		return false;
+	}
+
+	FHitResult OutHitResult;
+	const FVector StartLocation = GetActorLocation();
+	const FVector EndLocation = StartLocation + CurrentForwardVector * WallCheckDistance;
+	FCollisionObjectQueryParams ObjectQueryParams;
+	ObjectQueryParams.AddObjectTypesToQuery(ECollisionChannel::ECC_WorldDynamic);
+	ObjectQueryParams.AddObjectTypesToQuery(ECollisionChannel::ECC_WorldStatic);
+	FCollisionQueryParams QueryParams(FName(TEXT("LowTickWallTrace")), false, this);
+	GetWorld()->LineTraceSingleByObjectType(
+		OutHitResult,
+		StartLocation,
+		EndLocation,
+		ObjectQueryParams,
+		QueryParams
+	);
+
+	if (OutHitResult.bBlockingHit)
+	{
+		// TODO: Might be better to use a custom movement mode for wall sliding, but for now just clamp the falling speed
+		MovementComponent->Velocity.Z = FMath::Max(MovementComponent->Velocity.Z, -WallSlideMaxSpeed);
+	}
+
+	return OutHitResult.bBlockingHit;
+}
+
+void AMGPlayerCharacter::RemoveFallingLateralFriction(float InTime)
+{
+	if (GetWorldTimerManager().GetTimerRemaining(FallingLateralFrictionResetTimerHandle) > InTime)
+	{
+		// Timer still active and has more time remaining than the new time
+		return;
+	}
+
+	UCharacterMovementComponent* MovementComponent = GetCharacterMovement();
+	if (MovementComponent)
+	{
+		MovementComponent->FallingLateralFriction = 0.f;
+	}
+
+	GetWorldTimerManager().SetTimer(FallingLateralFrictionResetTimerHandle, this, &AMGPlayerCharacter::ResetFallingLateralFriction, InTime);
+}
+
+void AMGPlayerCharacter::ResetFallingLateralFriction()
+{
+	GetWorldTimerManager().ClearTimer(FallingLateralFrictionResetTimerHandle);
+
+	UCharacterMovementComponent* MovementComponent = GetCharacterMovement();
+	if (MovementComponent)
+	{
+		MovementComponent->FallingLateralFriction = DefaultFallingLateralFriction;
+	}
+}
+
+void AMGPlayerCharacter::OnSlideComplete()
+{
+	bIsGroundSliding = false;
+	AsyncSlideMovement = nullptr;
+}
+
+void AMGPlayerCharacter::OnSlideFailed()
+{
+	bIsGroundSliding = false;
+	AsyncSlideMovement = nullptr;
+}
+
 void AMGPlayerCharacter::StartInputJump()
 {
+	if (bIsWallSliding)
+	{
+		WallJump();
+	}
+	else
+	{
+		GroundJump();
+	}
+}
+
+void AMGPlayerCharacter::GroundJump()
+{
 	Jump();
+
+	if (AsyncSlideMovement)
+	{
+		AsyncSlideMovement->Cancel();
+	}
+	
+}
+
+void AMGPlayerCharacter::WallJump()
+{
+	RemoveFallingLateralFriction(WallJumpImpulseDuration);
+	LaunchCharacter(FVector(GetActorForwardVector().X * -1 * WallJumpHorizontalLaunchForce, 0.f, WallJumpVerticalLaunchForce), true, true);
 }

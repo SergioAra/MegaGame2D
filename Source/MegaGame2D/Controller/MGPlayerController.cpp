@@ -33,6 +33,7 @@ void AMGPlayerController::SetupInputComponent()
 		EnhancedInputComponent->BindAction(InputActions->Jump, ETriggerEvent::Triggered, this, &AMGPlayerController::InputJump);
 		EnhancedInputComponent->BindAction(InputActions->Shoot, ETriggerEvent::Triggered, this, &AMGPlayerController::InputShoot);
 		EnhancedInputComponent->BindAction(InputActions->Shoot, ETriggerEvent::Ongoing, this, &AMGPlayerController::InputShootHeld);
+		EnhancedInputComponent->BindAction(InputActions->Slide, ETriggerEvent::Triggered, this, &AMGPlayerController::InputSlide);
 
 #if !UE_BUILD_SHIPPING
 		// Input bindings for developer Mapping
@@ -98,5 +99,13 @@ void AMGPlayerController::InputShootHeld(const FInputActionInstance& Instance)
 	if (PlayerCharacter)
 	{
 		PlayerCharacter->InputShootHeld(Instance.GetElapsedTime());
+	}
+}
+
+void AMGPlayerController::InputSlide(const FInputActionInstance& Instance)
+{
+	if (PlayerCharacter)
+	{
+		PlayerCharacter->InputSlide();
 	}
 }

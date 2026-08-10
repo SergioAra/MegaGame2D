@@ -47,5 +47,8 @@ protected:
 
 	UFUNCTION()
 	void InputShootHeld(const FInputActionInstance& Instance);
+
+	UFUNCTION()
+	void InputSlide(const FInputActionInstance& Instance);
 	
 };

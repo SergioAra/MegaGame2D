@@ -11,6 +11,7 @@ class USpringArmComponent;
 class AMGProjectile;
 class AMGPlayerController;
 class AMGEnemy;
+class UAsyncRootMovement;
 
 UCLASS()
 class MEGAGAME2D_API AMGPlayerCharacter : public AMG2DCharacter
@@ -28,11 +29,15 @@ public:
 	void RestoreEnergy(int32 Amount);
 
 	void InputMove(const FVector2D& AxisValue);
+	void UpdateControlRotation();
 	void StartInputJump();
+	void GroundJump();
+	void WallJump();
 	void CancelInputJump();
 	void InputShootPressed();
 	void InputShootHeld(float InHoldTime);
 	void InputShootReleased(float InHoldTime);
+	void InputSlide();
 
 	void SpawnProjectile(TSubclassOf<AMGProjectile>& ProjectileClassToSpawn);
 
@@ -40,6 +45,8 @@ public:
 	virtual void UnPossessed() override;
 
 	virtual void OnDamageTaken(AActor* DamageSource) override;
+
+	virtual void OnWalkingOffLedge_Implementation(const FVector& PreviousFloorImpactNormal, const FVector& PreviousFloorContactNormal, const FVector& PreviousLocation, float TimeDelta) override;
 
 	void StartStun();
 
@@ -75,6 +82,24 @@ protected:
 
 	UFUNCTION()
 	void OnEndOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex);
+
+	UFUNCTION()
+	virtual void LowTick();
+
+	void CheckInputSlideCancel(const float HorizontalMovementProd);
+
+	bool CheckPressingAgainsWall(const float HorizontalMovementProd, const FVector& CurrentForwardVector);
+
+	void RemoveFallingLateralFriction(float InTime);
+
+	UFUNCTION()
+	void ResetFallingLateralFriction();
+
+	UFUNCTION()
+	void OnSlideComplete();
+
+	UFUNCTION()
+	void OnSlideFailed();
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "MG")
 	TObjectPtr<USpringArmComponent> SpringArmComponent;
@@ -139,6 +164,30 @@ protected:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "MG|Knockback")
 	float DamageVerticalLaunchForce = 1200.f;
 
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "MG|WallSlide")
+	float WallCheckDistance = 200.f;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "MG|WallSlide")
+	float WallSlideMaxSpeed = 20.f;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "MG|WallSlide")
+	float WallJumpHorizontalLaunchForce = 1200.f;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "MG|WallSlide")
+	float WallJumpVerticalLaunchForce = 1200.f;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "MG|WallSlide")
+	float WallJumpImpulseDuration = 0.5f;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "MG|GroundSlide")
+	float GroundSlideDuration = 0.3f;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "MG|GroundSlide")
+	float GroundSlideStrength = 1000.f;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "MG|GroundSlide")
+	bool bCancelGroundSlideOnLedges = false;
+
 	UPROPERTY(Transient)
 	FTimerHandle ShootingStateTimerHandle;
 
@@ -147,6 +196,12 @@ protected:
 
 	UPROPERTY(Transient)
 	FTimerHandle StunStateTimerHandle;
+
+	UPROPERTY(Transient)
+	FTimerHandle FallingLateralFrictionResetTimerHandle;
+
+	UPROPERTY(Transient)
+	TObjectPtr<UAsyncRootMovement> AsyncSlideMovement = nullptr;
 
 	UPROPERTY(Transient, VisibleAnywhere, BlueprintReadOnly, Category = "MG|State")
 	TObjectPtr<AMGPlayerController> PlayerController = nullptr;
@@ -158,7 +213,13 @@ protected:
 	bool bIsStunned = false;
 
 	UPROPERTY(Transient, VisibleAnywhere, BlueprintReadOnly, Category = "MG|State")
+	bool bIsWallSliding = false;
+
+	UPROPERTY(Transient, VisibleAnywhere, BlueprintReadOnly, Category = "MG|State")
 	bool bCancelNextCharge = false;
+
+	UPROPERTY(Transient, VisibleAnywhere, BlueprintReadOnly, Category = "MG|State")
+	bool bIsGroundSliding = false;
 
 	UPROPERTY(Transient, VisibleAnywhere, BlueprintReadOnly, Category = "MG|State")
 	int32 CurrentEnergy = 0;
@@ -168,4 +229,7 @@ protected:
 
 	UPROPERTY(Transient, VisibleAnywhere, BlueprintReadOnly, Category = "MG|State")
 	float DefaultFallingLateralFriction = 0.f;
+
+	UPROPERTY(Transient, VisibleAnywhere, BlueprintReadOnly, Category = "MG|State")
+	FVector2D LastInputDir = FVector2D::ZeroVector;
 };
