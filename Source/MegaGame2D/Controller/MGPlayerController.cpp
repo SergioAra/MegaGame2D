@@ -4,10 +4,61 @@
 #include "Controller/MGPlayerController.h"
 #include "Controller/MGInputData.h"
 #include "Character/MGPlayerCharacter.h"
+#include "General/MGGameMode.h"
 
 #include "EnhancedInputComponent.h"
 #include "EnhancedInputSubsystems.h"
-//#include "InputAction.h"
+#include "EngineUtils.h" 
+
+void AMGPlayerController::RespawnPlayerDelayed()
+{
+	if (PlayerCameraManager)
+	{
+		PlayerCameraManager->CameraStyle = "Fixed";
+		PlayerCameraManager->StartCameraFade(0.f, 1.f, RespawnDelay, FLinearColor::Black, false, true);
+	}
+
+	FTimerHandle RespawnTimerHandle;
+	GetWorldTimerManager().SetTimer(RespawnTimerHandle, this, &AMGPlayerController::RespawnPlayer, RespawnDelay, false);
+
+	// Destroying the player here messes up the camera manager, so only disable input and collision
+	DisableInput(this);
+	if (PlayerCharacter)
+	{
+		PlayerCharacter->SetActorEnableCollision(false);
+		PlayerCharacter->SetActorHiddenInGame(true);
+	}
+
+}
+
+void AMGPlayerController::RespawnPlayer()
+{
+	EnableInput(this);
+	if (PlayerCharacter)
+	{
+		PlayerCharacter->Destroy();
+	}
+
+	if (PlayerCameraManager)
+	{
+		PlayerCameraManager->CameraStyle = NAME_Default;
+		PlayerCameraManager->StartCameraFade(1.f, 0.f, RespawnFadeOutDelay, FLinearColor::Black, false, true);
+	}
+	
+	if (MGGameMode)
+	{
+		MGGameMode->RestartPlayer(this);
+	}
+}
+
+void AMGPlayerController::BeginPlay()
+{
+	TActorIterator<AMGGameMode> GameModeIt = TActorIterator<AMGGameMode>(GetWorld());
+	if (GameModeIt)
+	{
+		MGGameMode = *GameModeIt;
+	}
+}
 
 void AMGPlayerController::SetupInputComponent()
 {

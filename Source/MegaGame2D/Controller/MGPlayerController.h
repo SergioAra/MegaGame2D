@@ -9,6 +9,7 @@
 class UInputMappingContext;
 class UMGInputData;
 class AMGPlayerCharacter;
+class AMGGameMode;
 struct FInputActionInstance;
 
 UCLASS()
@@ -16,19 +17,16 @@ class MEGAGAME2D_API AMGPlayerController : public APlayerController
 {
 	GENERATED_BODY()
 
+public:
+
+	void RespawnPlayerDelayed();
+
+	UFUNCTION()
+	void RespawnPlayer();
+
 protected:
 
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "MG|Input")
-	TObjectPtr<UInputMappingContext> BaseInputMapping;
-
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "MG|Input")
-	TObjectPtr<UInputMappingContext> DeveloperInputMapping;
-
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "MG|Input")
-	TObjectPtr<UMGInputData> InputActions;
-
-	UPROPERTY(Transient, VisibleInstanceOnly, BlueprintReadOnly, Category = "MG")
-	TObjectPtr<AMGPlayerCharacter> PlayerCharacter;
+	virtual void BeginPlay() override;
 
 	virtual void SetupInputComponent() override;
 
@@ -50,5 +48,26 @@ protected:
 
 	UFUNCTION()
 	void InputSlide(const FInputActionInstance& Instance);
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "MG|Input")
+	TObjectPtr<UInputMappingContext> BaseInputMapping;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "MG|Input")
+	TObjectPtr<UInputMappingContext> DeveloperInputMapping;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "MG|Input")
+	TObjectPtr<UMGInputData> InputActions;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "MG|Respawn")
+	float RespawnDelay = 2.f;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "MG|Respawn")
+	float RespawnFadeOutDelay = 0.5f;
+
+	UPROPERTY(Transient, VisibleInstanceOnly, BlueprintReadOnly, Category = "MG")
+	TObjectPtr<AMGPlayerCharacter> PlayerCharacter;
+
+	UPROPERTY(Transient)
+	TObjectPtr<AMGGameMode> MGGameMode = nullptr;
 	
 };

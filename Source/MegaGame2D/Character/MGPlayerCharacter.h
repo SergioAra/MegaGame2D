@@ -12,6 +12,7 @@ class AMGProjectile;
 class AMGPlayerController;
 class AMGEnemy;
 class UAsyncRootMovement;
+class AMGGameMode;
 
 UCLASS()
 class MEGAGAME2D_API AMGPlayerCharacter : public AMG2DCharacter
@@ -70,9 +71,15 @@ public:
 	UFUNCTION(BlueprintImplementableEvent)
 	void OnFlashFullCharge();
 
+	void SetCheckpoint(AActor* NewCheckpoint);
+
+	virtual void FellOutOfWorld(const class UDamageType& dmgType) override;
+
 protected:
 
 	virtual void BeginPlay() override;
+
+	virtual void OnHealthDepleated() override;
 
 	UFUNCTION()
 	void OnShootingStateFinished();
@@ -188,21 +195,6 @@ protected:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "MG|GroundSlide")
 	bool bCancelGroundSlideOnLedges = false;
 
-	UPROPERTY(Transient)
-	FTimerHandle ShootingStateTimerHandle;
-
-	UPROPERTY(Transient)
-	FTimerHandle InvincibleStateTimerHandle;
-
-	UPROPERTY(Transient)
-	FTimerHandle StunStateTimerHandle;
-
-	UPROPERTY(Transient)
-	FTimerHandle FallingLateralFrictionResetTimerHandle;
-
-	UPROPERTY(Transient)
-	TObjectPtr<UAsyncRootMovement> AsyncSlideMovement = nullptr;
-
 	UPROPERTY(Transient, VisibleAnywhere, BlueprintReadOnly, Category = "MG|State")
 	TObjectPtr<AMGPlayerController> PlayerController = nullptr;
 
@@ -232,4 +224,22 @@ protected:
 
 	UPROPERTY(Transient, VisibleAnywhere, BlueprintReadOnly, Category = "MG|State")
 	FVector2D LastInputDir = FVector2D::ZeroVector;
+
+	UPROPERTY(Transient)
+	FTimerHandle ShootingStateTimerHandle;
+
+	UPROPERTY(Transient)
+	FTimerHandle InvincibleStateTimerHandle;
+
+	UPROPERTY(Transient)
+	FTimerHandle StunStateTimerHandle;
+
+	UPROPERTY(Transient)
+	FTimerHandle FallingLateralFrictionResetTimerHandle;
+
+	UPROPERTY(Transient)
+	TObjectPtr<UAsyncRootMovement> AsyncSlideMovement = nullptr;
+
+	UPROPERTY(Transient)
+	TObjectPtr<AMGGameMode> MGGameMode = nullptr;
 };

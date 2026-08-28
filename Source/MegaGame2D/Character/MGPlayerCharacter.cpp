@@ -7,6 +7,7 @@
 #include "Controller/MGPlayerController.h"
 #include "Component/MGHealthComponent.h"
 #include "RootMovement/AsyncRootMovement.h"
+#include "General/MGGameMode.h"
 
 #include "PaperFlipbookComponent.h"
 #include "Camera/CameraComponent.h"
@@ -16,6 +17,7 @@
 #include "Kismet/GameplayStatics.h"
 #include "PaperZDAnimationComponent.h"
 #include "PaperZDAnimInstance.h"
+#include "EngineUtils.h" 
 
 static FName MuzzleSocketName(TEXT("Muzzle"));
 static FName AnimationJumpStunName(TEXT("JumpStun"));
@@ -313,12 +315,30 @@ void AMGPlayerCharacter::EndInvincibility()
 		HealthComponent->SetIsInvincible(false);
 	}
 
-	for (AMGEnemy* Enemy : OverlappingEnemies)
+	TArray<AMGEnemy*> DamagingEnemies = OverlappingEnemies;
+
+	for (AMGEnemy* Enemy : DamagingEnemies)
 	{
 		if (Enemy)
 		{
 			UGameplayStatics::ApplyDamage(this, Enemy->GetContactDamage(), Enemy->GetInstigatorController(), Enemy, nullptr);
 		}
+	}
+}
+
+void AMGPlayerCharacter::SetCheckpoint(AActor* NewCheckpoint)
+{
+	if (PlayerController)
+	{
+		PlayerController->StartSpot = NewCheckpoint;
+	}
+}
+
+void AMGPlayerCharacter::FellOutOfWorld(const UDamageType& dmgType)
+{
+	if (HealthComponent)
+	{
+		HealthComponent->KillOwner();
 	}
 }
 
@@ -340,8 +360,22 @@ void AMGPlayerCharacter::BeginPlay()
 		DefaultFallingLateralFriction = MovementComponent->FallingLateralFriction;
 	}
 
+	TActorIterator<AMGGameMode> GameModeIt = TActorIterator<AMGGameMode>(GetWorld());
+	if (GameModeIt)
+	{
+		MGGameMode = *GameModeIt;
+	}
+
 	FTimerHandle LowTickTimerHandle;
 	GetWorldTimerManager().SetTimer(LowTickTimerHandle, this, &AMGPlayerCharacter::LowTick, LowDeltaTime, true);
+}
+
+void AMGPlayerCharacter::OnHealthDepleated()
+{
+	if (PlayerController)
+	{
+		PlayerController->RespawnPlayerDelayed();
+	}
 }
 
 void AMGPlayerCharacter::OnWalkingOffLedge_Implementation(const FVector& PreviousFloorImpactNormal, const FVector& PreviousFloorContactNormal, const FVector& PreviousLocation, float TimeDelta)

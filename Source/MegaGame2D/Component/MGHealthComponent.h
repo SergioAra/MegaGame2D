@@ -22,6 +22,8 @@ public:
 	FORCEINLINE bool IsInvincible() const { return bIsInvincible; }
 	FORCEINLINE void SetIsInvincible(bool bInIsInvincible) { bIsInvincible = bInIsInvincible; }	
 
+	void KillOwner();
+
 	UPROPERTY(BlueprintAssignable, Category = "MG")
 	FHealthDepleatedSignature OnHealthDepleated;
 

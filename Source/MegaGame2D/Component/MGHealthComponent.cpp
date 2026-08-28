@@ -12,6 +12,18 @@ UMGHealthComponent::UMGHealthComponent()
 
 }
 
+void UMGHealthComponent::KillOwner()
+{
+	if (bIsDead)
+	{
+		return;
+	}
+
+	CurrentHealth = 0.f;
+	bIsDead = true;
+	OnHealthDepleated.Broadcast();
+}
+
 
 // Called when the game starts
 void UMGHealthComponent::BeginPlay()
