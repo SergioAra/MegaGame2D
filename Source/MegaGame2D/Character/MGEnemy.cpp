@@ -4,6 +4,19 @@
 #include "Character/MGEnemy.h"
 #include "VFX/MGSpriteVFX.h"
 
+#include "Components/CapsuleComponent.h"
+
+static FName EnemyCollisionProfileName(TEXT("2DEnemy"));
+
+AMGEnemy::AMGEnemy()
+{
+	UCapsuleComponent* CapsuleComp = GetCapsuleComponent();
+	if (CapsuleComp)
+	{
+		CapsuleComp->SetCollisionProfileName(EnemyCollisionProfileName);
+	}
+}
+
 void AMGEnemy::OnHealthDepleated()
 {
 	Super::OnHealthDepleated();

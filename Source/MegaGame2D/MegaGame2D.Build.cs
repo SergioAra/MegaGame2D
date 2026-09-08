@@ -18,7 +18,10 @@ public class MegaGame2D : ModuleRules
 			"EnhancedInput",
             "Paper2D",
             "PaperZD",
-			"UMG"
+			"UMG",
+            "AIModule",
+			"StateTreeModule",
+			"GameplayStateTreeModule",
         });
 
 		PrivateDependencyModuleNames.AddRange(new string[] {  });

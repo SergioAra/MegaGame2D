@@ -12,7 +12,7 @@
 #include "Blueprint/WidgetLayoutLibrary.h"
 
 static FName SpriteCollisionProfileName(TEXT("NoCollision"));
-static FName CollisionProfileName(TEXT("Projectile"));
+static FName ProjectileCollisionProfileName(TEXT("Projectile"));
 static float LowDeltaTime(0.1f);
 
 // Sets default values
@@ -29,7 +29,7 @@ AMGProjectile::AMGProjectile()
 	//ProjectileMovementComponent->bShouldBounce = true;
 
 	CollisionComponent = CreateDefaultSubobject<USphereComponent>(TEXT("CollisionComponent"));
-	CollisionComponent->SetCollisionProfileName(CollisionProfileName);
+	CollisionComponent->SetCollisionProfileName(ProjectileCollisionProfileName);
 	SetRootComponent(CollisionComponent);
 
 	SpriteComponent = CreateDefaultSubobject<UPaperFlipbookComponent>(TEXT("SpriteComponent"));

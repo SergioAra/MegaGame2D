@@ -6,9 +6,7 @@
 
 #include "PaperFlipbookComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
-#include "Components/CapsuleComponent.h"
 
-static FName CollisionProfileName(TEXT("2DCharacter"));
 
 AMG2DCharacter::AMG2DCharacter()
 {
@@ -28,12 +26,6 @@ AMG2DCharacter::AMG2DCharacter()
 		MovementComponent->GravityScale = 5.5f;
 		MovementComponent->JumpZVelocity = 600.f;
 		MovementComponent->AirControl = 0.8f;
-	}
-
-	UCapsuleComponent* CapsuleComp = GetCapsuleComponent();
-	if (CapsuleComp)
-	{
-		CapsuleComp->SetCollisionProfileName(CollisionProfileName);
 	}
 }
 

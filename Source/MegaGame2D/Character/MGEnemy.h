@@ -7,6 +7,7 @@
 #include "MGEnemy.generated.h"
 
 class AMGSpriteVFX;
+class UStateTree;
 
 UCLASS()
 class MEGAGAME2D_API AMGEnemy : public AMG2DCharacter
@@ -15,7 +16,10 @@ class MEGAGAME2D_API AMGEnemy : public AMG2DCharacter
 
 public:
 
+	AMGEnemy();
+
 	FORCEINLINE float GetContactDamage() const { return ContactDamage; }
+	FORCEINLINE UStateTree* GetStateTree() const { return StateTree; }
 
 protected:
 
@@ -28,5 +32,10 @@ protected:
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "MG|Damage")
 	float ContactDamage = 1.f;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "MG|AI")
+	TObjectPtr<UStateTree> StateTree;
+
+
 	
 };

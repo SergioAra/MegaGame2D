@@ -22,6 +22,7 @@
 static FName MuzzleSocketName(TEXT("Muzzle"));
 static FName AnimationJumpStunName(TEXT("JumpStun"));
 static float LowDeltaTime(0.1f);
+static FName CharacterCollisionProfileName(TEXT("2DCharacter"));
 
 AMGPlayerCharacter::AMGPlayerCharacter()
 {
@@ -40,6 +41,12 @@ AMGPlayerCharacter::AMGPlayerCharacter()
 	{
 		MovementComponent->AirControl = 1.f;
 		MovementComponent->FallingLateralFriction = 50.f;
+	}
+
+	UCapsuleComponent* CapsuleComp = GetCapsuleComponent();
+	if (CapsuleComp)
+	{
+		CapsuleComp->SetCollisionProfileName(CharacterCollisionProfileName);
 	}
 }
 
