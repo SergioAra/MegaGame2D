@@ -40,8 +40,6 @@ public:
 	void InputShootReleased(float InHoldTime);
 	void InputSlide();
 
-	void SpawnProjectile(TSubclassOf<AMGProjectile>& ProjectileClassToSpawn);
-
 	virtual void PossessedBy(AController* NewController) override;
 	virtual void UnPossessed() override;
 
@@ -81,6 +79,10 @@ protected:
 
 	virtual void OnHealthDepleated() override;
 
+	virtual FVector GetShootingDirection() const override;
+
+	virtual void ShootProjectile() override;
+
 	UFUNCTION()
 	void OnShootingStateFinished();
 
@@ -113,9 +115,6 @@ protected:
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "MG")
 	TObjectPtr<UCameraComponent> CameraComponent;
-
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "MG|Shooting|Projectile")
-	TSubclassOf<AMGProjectile> ProjectileClass;
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "MG|Shooting|Projectile")
 	TSubclassOf<AMGProjectile> PartialChargeProjectileClass;
@@ -224,6 +223,9 @@ protected:
 
 	UPROPERTY(Transient, VisibleAnywhere, BlueprintReadOnly, Category = "MG|State")
 	FVector2D LastInputDir = FVector2D::ZeroVector;
+
+	UPROPERTY(Transient, VisibleAnywhere, BlueprintReadOnly, Category = "MG|State")
+	float LastShootHoldTime = 0.f;
 
 	UPROPERTY(Transient)
 	FTimerHandle ShootingStateTimerHandle;

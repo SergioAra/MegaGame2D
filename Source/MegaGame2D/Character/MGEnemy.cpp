@@ -4,9 +4,12 @@
 #include "Character/MGEnemy.h"
 #include "VFX/MGSpriteVFX.h"
 
+#include "PaperZDAnimationComponent.h"
+#include "PaperZDAnimInstance.h"
 #include "Components/CapsuleComponent.h"
 
 static FName EnemyCollisionProfileName(TEXT("2DEnemy"));
+static FName EnemyShootingSlotName(TEXT("ShootSlot"));
 
 AMGEnemy::AMGEnemy()
 {
@@ -14,6 +17,19 @@ AMGEnemy::AMGEnemy()
 	if (CapsuleComp)
 	{
 		CapsuleComp->SetCollisionProfileName(EnemyCollisionProfileName);
+	}
+}
+
+void AMGEnemy::PlayShootingAnimation()
+{
+	UPaperZDAnimationComponent* AnimationComp = GetAnimationComponent();
+	if (AnimationComp)
+	{
+		UPaperZDAnimInstance* AnimInstanceComp = AnimationComp->GetAnimInstance();
+		if (AnimInstanceComp)
+		{
+			AnimInstanceComp->PlayAnimationOverride(ShootingAnimation, EnemyShootingSlotName);
+		}
 	}
 }
 

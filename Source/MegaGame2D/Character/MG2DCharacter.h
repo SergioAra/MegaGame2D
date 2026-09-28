@@ -8,6 +8,7 @@
 #include "MG2DCharacter.generated.h"
 
 class UMGHealthComponent;
+class AMGProjectile;
 
 
 UCLASS()
@@ -21,6 +22,11 @@ public:
 
 	FORCEINLINE EFactionType GetFactionType() const { return FactionType; }
 
+	void SpawnProjectile(TSubclassOf<AMGProjectile>& ProjectileClassToSpawn);
+
+	UFUNCTION(BlueprintCallable)
+	virtual void ShootProjectile();
+
 protected:
 
 	virtual void BeginPlay() override;
@@ -30,6 +36,8 @@ protected:
 
 	UFUNCTION()
 	virtual void OnDamageTaken(AActor* DamageSource);
+
+	virtual FVector GetShootingDirection() const;
 
 	UFUNCTION(BlueprintImplementableEvent)
 	void OnDamageVFX();
@@ -48,5 +56,8 @@ protected:
 
 	UPROPERTY(Transient, VisibleInstanceOnly, BlueprintReadOnly, Category = "MG")
 	TObjectPtr<UMaterialInstanceDynamic> DynamicMaterialInstance;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "MG|Shooting|Projectile")
+	TSubclassOf<AMGProjectile> ProjectileClass;
 	
 };

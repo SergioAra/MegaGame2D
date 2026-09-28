@@ -3,10 +3,12 @@
 
 #include "Character/MG2DCharacter.h"
 #include "Component/MGHealthComponent.h"
+#include "Projectile/MGProjectile.h"
 
 #include "PaperFlipbookComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
 
+static FName MuzzleSocketName(TEXT("Muzzle"));
 
 AMG2DCharacter::AMG2DCharacter()
 {
@@ -27,6 +29,35 @@ AMG2DCharacter::AMG2DCharacter()
 		MovementComponent->JumpZVelocity = 600.f;
 		MovementComponent->AirControl = 0.8f;
 	}
+}
+
+void AMG2DCharacter::SpawnProjectile(TSubclassOf<AMGProjectile>& ProjectileClassToSpawn)
+{
+	FActorSpawnParameters SpawnParams;
+	SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
+	SpawnParams.Owner = this;
+	SpawnParams.Instigator = this;
+
+	FVector ShootLocation = GetActorLocation();
+	UPaperFlipbookComponent* SpriteComponent = GetSprite();
+	if (SpriteComponent && SpriteComponent->DoesSocketExist(MuzzleSocketName))
+	{
+		ShootLocation = SpriteComponent->GetSocketLocation(MuzzleSocketName);
+	}
+	else
+	{
+		// Try to offset the shoot location to the front of the character if no socket is found. TODO: delay the spawn until the animation is ready
+		ShootLocation += GetActorForwardVector() * 60.f + GetActorUpVector() * -4.5f;
+	}
+
+	//DrawDebugSphere(GetWorld(), ShootLocation, 5.f, 12, FColor::Red, false, 1.f);
+	const FVector& ProjectileDirection = GetShootingDirection();
+	GetWorld()->SpawnActor<AMGProjectile>(ProjectileClassToSpawn, ShootLocation, ProjectileDirection.Rotation(), SpawnParams);
+}
+
+void AMG2DCharacter::ShootProjectile()
+{
+	SpawnProjectile(ProjectileClass);
 }
 
 void AMG2DCharacter::BeginPlay()
@@ -53,4 +84,9 @@ void AMG2DCharacter::OnHealthDepleated()
 void AMG2DCharacter::OnDamageTaken(AActor* DamageSource)
 {
 	OnDamageVFX();
+}
+
+FVector AMG2DCharacter::GetShootingDirection() const
+{
+	return GetActorForwardVector();
 }

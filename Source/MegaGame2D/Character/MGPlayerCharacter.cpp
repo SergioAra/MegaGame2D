@@ -19,7 +19,6 @@
 #include "PaperZDAnimInstance.h"
 #include "EngineUtils.h" 
 
-static FName MuzzleSocketName(TEXT("Muzzle"));
 static FName AnimationJumpStunName(TEXT("JumpStun"));
 static float LowDeltaTime(0.1f);
 static FName CharacterCollisionProfileName(TEXT("2DCharacter"));
@@ -123,59 +122,8 @@ void AMGPlayerCharacter::InputShootHeld(float InHoldTime)
 
 void AMGPlayerCharacter::InputShootReleased(float InHoldTime)
 {
-	if(bCancelNextCharge)
-	{
-		bCancelNextCharge = false;
-		return;
-	}
-
-	if (bIsGroundSliding)
-	{
-		return;
-	}
-
-	if (bIsStunned)
-	{
-		return;
-	} 
-
-	if (CurrentEnergy <= 0)
-	{
-		return;
-	}
-
-	TSubclassOf<AMGProjectile> ProjectileClassToSpawn = ProjectileClass;
-
-	if (InHoldTime >= ChargedProjectileTime)
-	{
-		ProjectileClassToSpawn = ChargedProjectileClass;
-	}
-	else if (InHoldTime >= PartialChargeProjectileTime)
-	{
-		ProjectileClassToSpawn = PartialChargeProjectileClass;
-	}
-
-	int32 EnergyCost = 1;
-	AMGProjectile* DefaultProjectile = ProjectileClassToSpawn.GetDefaultObject();
-	if (DefaultProjectile)
-	{
-		EnergyCost = DefaultProjectile->GetEnergyCost();
-	}
-
-	const int32 NewEnergy = CurrentEnergy - EnergyCost;
-
-	if(NewEnergy < 0)
-	{
-		return;
-	}
-
-	CurrentEnergy = NewEnergy;
-
-	SpawnProjectile(ProjectileClassToSpawn);
-
-	SetIsShooting(true);
-	GetWorldTimerManager().SetTimer(ShootingStateTimerHandle, this, &AMGPlayerCharacter::OnShootingStateFinished, ShootingStateTime);
-
+	LastShootHoldTime = InHoldTime;
+	ShootProjectile();
 }
 
 void AMGPlayerCharacter::InputSlide()
@@ -218,30 +166,6 @@ void AMGPlayerCharacter::InputSlide()
 		AsyncSlideMovement->OnFail.AddDynamic(this, &AMGPlayerCharacter::OnSlideFailed);
 		AsyncSlideMovement->Activate();
 	}
-}
-
-void AMGPlayerCharacter::SpawnProjectile(TSubclassOf<AMGProjectile>& ProjectileClassToSpawn)
-{
-	FActorSpawnParameters SpawnParams;
-	SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
-	SpawnParams.Owner = this;
-	SpawnParams.Instigator = this;
-
-	FVector ShootLocation = GetActorLocation();
-	UPaperFlipbookComponent* SpriteComponent = GetSprite();
-	if (SpriteComponent && SpriteComponent->DoesSocketExist(MuzzleSocketName))
-	{
-		ShootLocation = SpriteComponent->GetSocketLocation(MuzzleSocketName);
-	}
-	else
-	{
-		// Try to offset the shoot location to the front of the character if no socket is found. Might be interesting to try to delay the spawn until the animation is ready
-		ShootLocation += GetActorForwardVector() * 60.f + GetActorUpVector() * -4.5f;
-	}
-
-	//DrawDebugSphere(GetWorld(), ShootLocation, 5.f, 12, FColor::Red, false, 1.f);
-	FVector ProjectileDirection = GetActorForwardVector() * (bIsWallSliding ? -1.f : 1.f);
-	GetWorld()->SpawnActor<AMGProjectile>(ProjectileClassToSpawn, ShootLocation, ProjectileDirection.Rotation(), SpawnParams);
 }
 
 void AMGPlayerCharacter::PossessedBy(AController* NewController)
@@ -383,6 +307,67 @@ void AMGPlayerCharacter::OnHealthDepleated()
 	{
 		PlayerController->RespawnPlayerDelayed();
 	}
+}
+
+FVector AMGPlayerCharacter::GetShootingDirection() const
+{
+	return GetActorForwardVector() * (bIsWallSliding ? -1.f : 1.f);
+}
+
+void AMGPlayerCharacter::ShootProjectile()
+{
+	if (bCancelNextCharge)
+	{
+		bCancelNextCharge = false;
+		return;
+	}
+
+	if (bIsGroundSliding)
+	{
+		return;
+	}
+
+	if (bIsStunned)
+	{
+		return;
+	}
+
+	if (CurrentEnergy <= 0)
+	{
+		return;
+	}
+
+	TSubclassOf<AMGProjectile> ProjectileClassToSpawn = ProjectileClass;
+
+	if (LastShootHoldTime >= ChargedProjectileTime)
+	{
+		ProjectileClassToSpawn = ChargedProjectileClass;
+	}
+	else if (LastShootHoldTime >= PartialChargeProjectileTime)
+	{
+		ProjectileClassToSpawn = PartialChargeProjectileClass;
+	}
+
+	int32 EnergyCost = 1;
+	AMGProjectile* DefaultProjectile = ProjectileClassToSpawn.GetDefaultObject();
+	if (DefaultProjectile)
+	{
+		EnergyCost = DefaultProjectile->GetEnergyCost();
+	}
+
+	const int32 NewEnergy = CurrentEnergy - EnergyCost;
+
+	if (NewEnergy < 0)
+	{
+		return;
+	}
+
+	CurrentEnergy = NewEnergy;
+
+	SpawnProjectile(ProjectileClassToSpawn);
+
+	SetIsShooting(true);
+	GetWorldTimerManager().SetTimer(ShootingStateTimerHandle, this, &AMGPlayerCharacter::OnShootingStateFinished, ShootingStateTime);
 }
 
 void AMGPlayerCharacter::OnWalkingOffLedge_Implementation(const FVector& PreviousFloorImpactNormal, const FVector& PreviousFloorContactNormal, const FVector& PreviousLocation, float TimeDelta)
