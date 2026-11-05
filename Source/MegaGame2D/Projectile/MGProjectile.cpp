@@ -11,9 +11,12 @@
 #include "Kismet/GameplayStatics.h"
 #include "Blueprint/WidgetLayoutLibrary.h"
 
-static FName SpriteCollisionProfileName(TEXT("NoCollision"));
-static FName ProjectileCollisionProfileName(TEXT("Projectile"));
-static float LowDeltaTime(0.1f);
+namespace
+{
+	FName SpriteCollisionProfileName(TEXT("NoCollision"));
+	FName ProjectileCollisionProfileName(TEXT("Projectile"));
+	float LowDeltaTime(0.1f);
+}
 
 // Sets default values
 AMGProjectile::AMGProjectile()
