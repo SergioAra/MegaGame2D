@@ -8,7 +8,7 @@
 
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE(FHealthDepleatedSignature);
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FDamageTakenSignature, AActor*, DamageSource);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FDamageTakenSignature, AActor*, DamageSource, int32, CurrentHealth);
 
 UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
 class MEGAGAME2D_API UMGHealthComponent : public UActorComponent
@@ -21,6 +21,8 @@ public:
 
 	FORCEINLINE bool IsInvincible() const { return bIsInvincible; }
 	FORCEINLINE void SetIsInvincible(bool bInIsInvincible) { bIsInvincible = bInIsInvincible; }	
+	FORCEINLINE float GetCurrentHealth() const { return CurrentHealth; }
+	FORCEINLINE float GetMaxHealth() const { return MaxHealth; }
 
 	void KillOwner();
 

@@ -81,7 +81,7 @@ void AMG2DCharacter::OnHealthDepleated()
 	Destroy();
 }
 
-void AMG2DCharacter::OnDamageTaken(AActor* DamageSource)
+void AMG2DCharacter::OnDamageTaken(AActor* DamageSource, int32 CurrentHealth)
 {
 	OnDamageVFX();
 }

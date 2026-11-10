@@ -7,3 +7,8 @@ AMGGameMode::AMGGameMode()
 {
 
 }
+
+void AMGGameMode::BeginPlay()
+{
+	Super::BeginPlay();
+}

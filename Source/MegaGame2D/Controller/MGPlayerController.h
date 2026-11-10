@@ -10,6 +10,7 @@ class UInputMappingContext;
 class UMGInputData;
 class AMGPlayerCharacter;
 class AMGGameMode;
+class UMGHUDWidget;
 struct FInputActionInstance;
 
 UCLASS()
@@ -31,6 +32,8 @@ protected:
 	virtual void SetupInputComponent() override;
 
 	virtual void OnPossess(APawn* InPawn) override;
+
+	void HUDSetup();
 
 	// **** Inputs Events **** //
 
@@ -63,6 +66,12 @@ protected:
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "MG|Respawn")
 	float RespawnFadeOutDelay = 0.5f;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "MG|UI")
+	TSubclassOf<UMGHUDWidget> HUDWidgetClass;
+
+	UPROPERTY(Transient, VisibleInstanceOnly, BlueprintReadOnly, Category = "MG|UI")
+	TObjectPtr<UMGHUDWidget> HUDWidget;
 
 	UPROPERTY(Transient, VisibleInstanceOnly, BlueprintReadOnly, Category = "MG")
 	TObjectPtr<AMGPlayerCharacter> PlayerCharacter;

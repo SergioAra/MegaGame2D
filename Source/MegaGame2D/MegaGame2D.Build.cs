@@ -19,6 +19,8 @@ public class MegaGame2D : ModuleRules
             "Paper2D",
             "PaperZD",
 			"UMG",
+            "Slate",
+			"SlateCore",
             "AIModule",
 			"StateTreeModule",
 			"GameplayStateTreeModule",

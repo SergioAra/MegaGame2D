@@ -17,4 +17,6 @@ class MEGAGAME2D_API AMGGameMode : public AGameMode
 public:
 	
 	AMGGameMode();
+
+	void BeginPlay() override;
 };

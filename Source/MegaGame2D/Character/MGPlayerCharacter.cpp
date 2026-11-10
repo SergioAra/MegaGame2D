@@ -19,9 +19,13 @@
 #include "PaperZDAnimInstance.h"
 #include "EngineUtils.h" 
 
-static FName AnimationJumpStunName(TEXT("JumpStun"));
-static float LowDeltaTime(0.1f);
-static FName CharacterCollisionProfileName(TEXT("2DCharacter"));
+namespace
+{
+	static FName AnimationJumpStunName(TEXT("JumpStun"));
+	static float LowDeltaTime(0.1f);
+	static FName CharacterCollisionProfileName(TEXT("2DCharacter"));
+}
+
 
 AMGPlayerCharacter::AMGPlayerCharacter()
 {
@@ -180,9 +184,9 @@ void AMGPlayerCharacter::UnPossessed()
 	PlayerController = nullptr;
 }
 
-void AMGPlayerCharacter::OnDamageTaken(AActor* DamageSource)
+void AMGPlayerCharacter::OnDamageTaken(AActor* DamageSource, int32 CurrentHealth)
 {
-	Super::OnDamageTaken(DamageSource);
+	Super::OnDamageTaken(DamageSource, CurrentHealth);
 
 	bCancelNextCharge = true;
 

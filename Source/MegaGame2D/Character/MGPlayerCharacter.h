@@ -43,7 +43,7 @@ public:
 	virtual void PossessedBy(AController* NewController) override;
 	virtual void UnPossessed() override;
 
-	virtual void OnDamageTaken(AActor* DamageSource) override;
+	virtual void OnDamageTaken(AActor* DamageSource, int32 CurrentHealth) override;
 
 	virtual void OnWalkingOffLedge_Implementation(const FVector& PreviousFloorImpactNormal, const FVector& PreviousFloorContactNormal, const FVector& PreviousLocation, float TimeDelta) override;
 

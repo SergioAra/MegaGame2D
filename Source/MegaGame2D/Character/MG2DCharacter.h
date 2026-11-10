@@ -22,6 +22,8 @@ public:
 
 	FORCEINLINE EFactionType GetFactionType() const { return FactionType; }
 
+	FORCEINLINE UMGHealthComponent* GetHealthComponent() const { return HealthComponent; }
+
 	void SpawnProjectile(TSubclassOf<AMGProjectile>& ProjectileClassToSpawn);
 
 	UFUNCTION(BlueprintCallable)
@@ -35,7 +37,7 @@ protected:
 	virtual void OnHealthDepleated();
 
 	UFUNCTION()
-	virtual void OnDamageTaken(AActor* DamageSource);
+	virtual void OnDamageTaken(AActor* DamageSource, int32 CurrentHealth);
 
 	virtual FVector GetShootingDirection() const;
 

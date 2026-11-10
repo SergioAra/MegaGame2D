@@ -5,10 +5,12 @@
 #include "Controller/MGInputData.h"
 #include "Character/MGPlayerCharacter.h"
 #include "General/MGGameMode.h"
+#include "UI/MGHUDWidget.h"
 
 #include "EnhancedInputComponent.h"
 #include "EnhancedInputSubsystems.h"
 #include "EngineUtils.h" 
+#include "Blueprint/UserWidget.h"
 
 void AMGPlayerController::RespawnPlayerDelayed()
 {
@@ -97,6 +99,29 @@ void AMGPlayerController::OnPossess(APawn* InPawn)
 {
 	Super::OnPossess(InPawn);
 	PlayerCharacter = Cast<AMGPlayerCharacter>(InPawn);
+
+	HUDSetup();
+}
+
+void AMGPlayerController::HUDSetup()
+{
+	if (HUDWidget)
+	{
+		HUDWidget->HUDSetup(PlayerCharacter);
+	}
+	else
+	{
+		if (HUDWidgetClass)
+		{
+			HUDWidget = CreateWidget<UMGHUDWidget>(this, HUDWidgetClass);
+
+			if (HUDWidget)
+			{
+				HUDWidget->AddToViewport();
+				HUDWidget->HUDSetup(PlayerCharacter);
+			}
+		}
+	}
 }
 
 void AMGPlayerController::InputMove(const FInputActionValue& Value)

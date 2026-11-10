@@ -56,7 +56,7 @@ void UMGHealthComponent::OnTakeAnyDamage(AActor* DamagedActor, float Damage, con
 	if (CurrentHealth > 0.f)
 	{
 		CurrentHealth = FMath::Max(CurrentHealth - Damage, 0.f);
-		OnDamageTaken.Broadcast(DamageCauser);
+		OnDamageTaken.Broadcast(DamageCauser, CurrentHealth);
 		if (CurrentHealth <= 0.f)
 		{
 			bIsDead = true;
