@@ -17,6 +17,7 @@
 #include "Kismet/GameplayStatics.h"
 #include "PaperZDAnimationComponent.h"
 #include "PaperZDAnimInstance.h"
+#include "Sound/SoundCue.h"
 #include "EngineUtils.h" 
 
 namespace
@@ -169,6 +170,7 @@ void AMGPlayerCharacter::InputSlide()
 		AsyncSlideMovement->OnComplete.AddDynamic(this, &AMGPlayerCharacter::OnSlideComplete);
 		AsyncSlideMovement->OnFail.AddDynamic(this, &AMGPlayerCharacter::OnSlideFailed);
 		AsyncSlideMovement->Activate();
+		UGameplayStatics::PlaySound2D(this, SlideSound);
 	}
 }
 
@@ -187,6 +189,8 @@ void AMGPlayerCharacter::UnPossessed()
 void AMGPlayerCharacter::OnDamageTaken(AActor* DamageSource, int32 CurrentHealth)
 {
 	Super::OnDamageTaken(DamageSource, CurrentHealth);
+
+	UGameplayStatics::PlaySound2D(this, DamagedSound);
 
 	bCancelNextCharge = true;
 
@@ -307,6 +311,9 @@ void AMGPlayerCharacter::BeginPlay()
 
 void AMGPlayerCharacter::OnHealthDepleated()
 {
+
+	UGameplayStatics::PlaySound2D(this, DefeatedSound);
+
 	if (PlayerController)
 	{
 		PlayerController->RespawnPlayerDelayed();
@@ -374,6 +381,13 @@ void AMGPlayerCharacter::ShootProjectile()
 	GetWorldTimerManager().SetTimer(ShootingStateTimerHandle, this, &AMGPlayerCharacter::OnShootingStateFinished, ShootingStateTime);
 }
 
+void AMGPlayerCharacter::OnRespawn()
+{
+	// This logic is called by the pawn that is being destroyed to respawn the new player
+
+	UGameplayStatics::PlaySound2D(this, RespawnSound);
+}
+
 void AMGPlayerCharacter::OnWalkingOffLedge_Implementation(const FVector& PreviousFloorImpactNormal, const FVector& PreviousFloorContactNormal, const FVector& PreviousLocation, float TimeDelta)
 {
 	Super::OnWalkingOffLedge_Implementation(PreviousFloorImpactNormal, PreviousFloorContactNormal, PreviousLocation, TimeDelta);
@@ -382,6 +396,18 @@ void AMGPlayerCharacter::OnWalkingOffLedge_Implementation(const FVector& Previou
 	{
 		AsyncSlideMovement->Cancel();
 	}
+}
+
+void AMGPlayerCharacter::OnJumped_Implementation()
+{
+	Super::OnJumped_Implementation();
+	UGameplayStatics::PlaySound2D(this, JumpSound);
+}
+
+void AMGPlayerCharacter::Landed(const FHitResult& Hit)
+{
+	Super::Landed(Hit);
+	UGameplayStatics::PlaySound2D(this, LandedSound);
 }
 
 void AMGPlayerCharacter::OnShootingStateFinished()
@@ -523,6 +549,7 @@ void AMGPlayerCharacter::StartInputJump()
 
 void AMGPlayerCharacter::GroundJump()
 {
+	// This only signals the character that we want to jump, Jump confirmation is called in OnJumped_Implementation
 	Jump();
 
 	if (AsyncSlideMovement)
@@ -534,6 +561,8 @@ void AMGPlayerCharacter::GroundJump()
 
 void AMGPlayerCharacter::WallJump()
 {
+	UGameplayStatics::PlaySound2D(this, WallJumpSound);
+
 	RemoveFallingLateralFriction(WallJumpImpulseDuration);
 	LaunchCharacter(FVector(GetActorForwardVector().X * -1 * WallJumpHorizontalLaunchForce, 0.f, WallJumpVerticalLaunchForce), true, true);
 }

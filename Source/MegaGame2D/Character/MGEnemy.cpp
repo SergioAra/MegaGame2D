@@ -7,6 +7,8 @@
 #include "PaperZDAnimationComponent.h"
 #include "PaperZDAnimInstance.h"
 #include "Components/CapsuleComponent.h"
+#include "Kismet/GameplayStatics.h"
+#include "Sound/SoundCue.h"
 
 static FName EnemyCollisionProfileName(TEXT("2DEnemy"));
 static FName EnemyShootingSlotName(TEXT("ShootSlot"));
@@ -33,6 +35,11 @@ void AMGEnemy::PlayShootingAnimation()
 	}
 }
 
+void AMGEnemy::PlayerDetected()
+{
+	UGameplayStatics::PlaySoundAtLocation(this, PlayerDetectedSound, GetActorLocation());
+}
+
 void AMGEnemy::OnHealthDepleated()
 {
 	Super::OnHealthDepleated();
@@ -47,4 +54,6 @@ void AMGEnemy::PlayDestroyedFX()
 		SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
 		GetWorld()->SpawnActor<AMGSpriteVFX>(DestroyedVFXClass, GetActorLocation(), GetActorRotation(), SpawnParams);
 	}
+
+	UGameplayStatics::PlaySoundAtLocation(this, DefeatedSound, GetActorLocation());
 }

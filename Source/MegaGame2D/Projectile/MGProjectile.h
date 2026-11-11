@@ -12,6 +12,7 @@ class USphereComponent;
 class UPaperFlipbookComponent;
 class AMGSpriteVFX;
 class AMGPlayerCharacter;
+class USoundCue;
 
 UENUM(BlueprintType)
 enum class ECullingType : uint8
@@ -70,6 +71,15 @@ protected:
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "MG|Projectile")
 	float Damage = 1;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "MG|Audio")
+	TObjectPtr<USoundCue> ShootingSound;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "MG|Audio")
+	bool bShootingSoundAtSpawnLocation = false;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "MG|Audio")
+	TObjectPtr<USoundCue> ImpactSound;
 
 	UPROPERTY(Transient, VisibleInstanceOnly, BlueprintReadOnly, Category = "MG|Projectile")
 	TObjectPtr<AMGPlayerCharacter> OwningPlayerCharacter = nullptr;

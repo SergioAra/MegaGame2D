@@ -10,12 +10,13 @@
 #include "PaperFlipbookComponent.h"
 #include "Kismet/GameplayStatics.h"
 #include "Blueprint/WidgetLayoutLibrary.h"
+#include "Sound/SoundCue.h"
 
 namespace
 {
-	FName SpriteCollisionProfileName(TEXT("NoCollision"));
-	FName ProjectileCollisionProfileName(TEXT("Projectile"));
-	float LowDeltaTime(0.1f);
+	static FName SpriteCollisionProfileName(TEXT("NoCollision"));
+	static FName ProjectileCollisionProfileName(TEXT("Projectile"));
+	static float LowDeltaTime(0.1f);
 }
 
 // Sets default values
@@ -63,7 +64,15 @@ void AMGProjectile::BeginPlay()
 
 	FTimerHandle LowTickTimerHandle;
 	GetWorldTimerManager().SetTimer(LowTickTimerHandle, this, &AMGProjectile::LowTick, LowDeltaTime, true);
-	
+
+	if (bShootingSoundAtSpawnLocation)
+	{
+		UGameplayStatics::PlaySoundAtLocation(this, ShootingSound, GetActorLocation());
+	}
+	else
+	{
+		UGameplayStatics::PlaySound2D(this, ShootingSound);
+	}
 }
 
 void AMGProjectile::Destroyed()
@@ -84,6 +93,8 @@ void AMGProjectile::PlayHitFX()
 		SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
 		GetWorld()->SpawnActor<AMGSpriteVFX>(ImpactVFXClass, GetActorLocation(), GetActorRotation(), SpawnParams);
 	}
+
+	UGameplayStatics::PlaySoundAtLocation(this, ImpactSound, GetActorLocation());
 }
 
 void AMGProjectile::OnHit(UPrimitiveComponent* HitComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit)

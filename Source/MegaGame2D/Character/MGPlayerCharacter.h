@@ -13,6 +13,7 @@ class AMGPlayerController;
 class AMGEnemy;
 class UAsyncRootMovement;
 class AMGGameMode;
+class USoundCue;
 
 UCLASS()
 class MEGAGAME2D_API AMGPlayerCharacter : public AMG2DCharacter
@@ -47,6 +48,12 @@ public:
 
 	virtual void OnWalkingOffLedge_Implementation(const FVector& PreviousFloorImpactNormal, const FVector& PreviousFloorContactNormal, const FVector& PreviousLocation, float TimeDelta) override;
 
+	virtual void OnJumped_Implementation() override;
+
+	virtual void Landed(const FHitResult& Hit) override;
+
+	virtual void FellOutOfWorld(const class UDamageType& dmgType) override;
+
 	void StartStun();
 
 	UFUNCTION()
@@ -71,7 +78,7 @@ public:
 
 	void SetCheckpoint(AActor* NewCheckpoint);
 
-	virtual void FellOutOfWorld(const class UDamageType& dmgType) override;
+	virtual void OnRespawn();
 
 protected:
 
@@ -194,6 +201,27 @@ protected:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "MG|GroundSlide")
 	bool bCancelGroundSlideOnLedges = false;
 
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "MG|Audio")
+	TObjectPtr<USoundCue> JumpSound;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "MG|Audio")
+	TObjectPtr<USoundCue> WallJumpSound;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "MG|Audio")
+	TObjectPtr<USoundCue> LandedSound;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "MG|Audio")
+	TObjectPtr<USoundCue> SlideSound;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "MG|Audio")
+	TObjectPtr<USoundCue> DamagedSound;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "MG|Audio")
+	TObjectPtr<USoundCue> DefeatedSound;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "MG|Audio")
+	TObjectPtr<USoundCue> RespawnSound;
+
 	UPROPERTY(Transient, VisibleAnywhere, BlueprintReadOnly, Category = "MG|State")
 	TObjectPtr<AMGPlayerController> PlayerController = nullptr;
 
@@ -226,6 +254,7 @@ protected:
 
 	UPROPERTY(Transient, VisibleAnywhere, BlueprintReadOnly, Category = "MG|State")
 	float LastShootHoldTime = 0.f;
+
 
 	UPROPERTY(Transient)
 	FTimerHandle ShootingStateTimerHandle;

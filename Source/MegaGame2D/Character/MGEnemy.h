@@ -9,6 +9,7 @@
 class AMGSpriteVFX;
 class UStateTree;
 class UPaperZDAnimSequence;
+class USoundCue;
 
 UCLASS()
 class MEGAGAME2D_API AMGEnemy : public AMG2DCharacter
@@ -21,9 +22,6 @@ public:
 
 	FORCEINLINE float GetContactDamage() const { return ContactDamage; }
 	FORCEINLINE UStateTree* GetStateTree() const { return StateTree; }
-
-	UFUNCTION(BlueprintCallable)
-	void PlayShootingAnimation();
 
 	// State Tree properties need to be public
 
@@ -39,6 +37,12 @@ protected:
 
 	void PlayDestroyedFX();
 
+	UFUNCTION(BlueprintCallable)
+	void PlayShootingAnimation();
+
+	UFUNCTION(BlueprintCallable)
+	void PlayerDetected();
+
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "MG|VFX")
 	TSubclassOf<AMGSpriteVFX> DestroyedVFXClass = nullptr;
 
@@ -50,6 +54,12 @@ protected:
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "MG|Animation")
 	TObjectPtr<UPaperZDAnimSequence> ShootingAnimation;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "MG|Audio")
+	TObjectPtr<USoundCue> DefeatedSound;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "MG|Audio")
+	TObjectPtr<USoundCue> PlayerDetectedSound;
 
 	UPROPERTY(EditInstanceOnly, BlueprintReadOnly, Category = "MG|Behavior|Movement")
 	TObjectPtr<AActor> MovementSpline;

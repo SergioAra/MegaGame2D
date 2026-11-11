@@ -9,7 +9,7 @@
 
 class UMGHealthComponent;
 class AMGProjectile;
-
+class USoundCue;
 
 UCLASS()
 class MEGAGAME2D_API AMG2DCharacter : public APaperZDCharacter

@@ -38,6 +38,7 @@ void AMGPlayerController::RespawnPlayer()
 	EnableInput(this);
 	if (PlayerCharacter)
 	{
+		PlayerCharacter->OnRespawn();
 		PlayerCharacter->Destroy();
 	}
 
