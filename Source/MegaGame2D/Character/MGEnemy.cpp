@@ -10,8 +10,11 @@
 #include "Kismet/GameplayStatics.h"
 #include "Sound/SoundCue.h"
 
-static FName EnemyCollisionProfileName(TEXT("2DEnemy"));
-static FName EnemyShootingSlotName(TEXT("ShootSlot"));
+namespace
+{
+	static const FName EnemyCollisionProfileName(TEXT("2DEnemy"));
+	static const FName EnemyShootingSlotName(TEXT("ShootSlot"));
+}
 
 AMGEnemy::AMGEnemy()
 {

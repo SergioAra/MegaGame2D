@@ -14,9 +14,9 @@
 
 namespace
 {
-	static FName SpriteCollisionProfileName(TEXT("NoCollision"));
-	static FName ProjectileCollisionProfileName(TEXT("Projectile"));
-	static float LowDeltaTime(0.1f);
+	static const FName SpriteCollisionProfileName(TEXT("NoCollision"));
+	static const FName ProjectileCollisionProfileName(TEXT("Projectile"));
+	static const float LowDeltaTime(0.1f);
 }
 
 // Sets default values

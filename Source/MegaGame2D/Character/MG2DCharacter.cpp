@@ -8,7 +8,11 @@
 #include "PaperFlipbookComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
 
-static FName MuzzleSocketName(TEXT("Muzzle"));
+namespace
+{
+	static const FName MuzzleSocketName(TEXT("Muzzle"));
+}
+
 
 AMG2DCharacter::AMG2DCharacter()
 {

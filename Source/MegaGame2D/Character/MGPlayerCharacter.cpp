@@ -18,13 +18,14 @@
 #include "PaperZDAnimationComponent.h"
 #include "PaperZDAnimInstance.h"
 #include "Sound/SoundCue.h"
+#include "Components/AudioComponent.h"
 #include "EngineUtils.h" 
 
 namespace
 {
-	static FName AnimationJumpStunName(TEXT("JumpStun"));
-	static float LowDeltaTime(0.1f);
-	static FName CharacterCollisionProfileName(TEXT("2DCharacter"));
+	static const FName AnimationJumpStunName(TEXT("JumpStun"));
+	static const float LowDeltaTime(0.1f);
+	static const FName CharacterCollisionProfileName(TEXT("2DCharacter"));
 }
 
 
@@ -105,6 +106,8 @@ void AMGPlayerCharacter::InputShootHeld(float InHoldTime)
 	if (bCancelNextCharge || bIsStunned || bIsGroundSliding || CurrentEnergy <= 0 || InHoldTime < PartialChargeProjectileTime)
 	{
 		CurrentChargeFlashTime = 0.f;
+
+		StopChargeSound();
 	}
 	else
 	{
@@ -116,10 +119,26 @@ void AMGPlayerCharacter::InputShootHeld(float InHoldTime)
 			if (InHoldTime >= ChargedProjectileTime)
 			{
 				OnFlashFullCharge();
+
+				if (PartialChargeSoundAudioComp)
+				{
+					PartialChargeSoundAudioComp->Stop();
+					PartialChargeSoundAudioComp = nullptr;
+				}
+
+				if (!FullChargeSoundAudioComp)
+				{
+					FullChargeSoundAudioComp = UGameplayStatics::SpawnSoundAttached(FullChargeSound, GetRootComponent());
+				}
 			}
 			else
 			{
 				OnFlashPartialCharge();
+
+				if (!PartialChargeSoundAudioComp)
+				{
+					PartialChargeSoundAudioComp = UGameplayStatics::SpawnSoundAttached(PartialChargeSound, GetRootComponent());
+				}
 			}
 		}
 	}
@@ -128,7 +147,24 @@ void AMGPlayerCharacter::InputShootHeld(float InHoldTime)
 void AMGPlayerCharacter::InputShootReleased(float InHoldTime)
 {
 	LastShootHoldTime = InHoldTime;
+	StopChargeSound();
 	ShootProjectile();
+
+}
+
+void AMGPlayerCharacter::StopChargeSound()
+{
+	if (PartialChargeSoundAudioComp)
+	{
+		PartialChargeSoundAudioComp->Stop();
+		PartialChargeSoundAudioComp = nullptr;
+	}
+
+	if (FullChargeSoundAudioComp)
+	{
+		FullChargeSoundAudioComp->Stop();
+		FullChargeSoundAudioComp = nullptr;
+	}
 }
 
 void AMGPlayerCharacter::InputSlide()
@@ -311,6 +347,8 @@ void AMGPlayerCharacter::BeginPlay()
 
 void AMGPlayerCharacter::OnHealthDepleated()
 {
+
+	StopChargeSound();
 
 	UGameplayStatics::PlaySound2D(this, DefeatedSound);
 

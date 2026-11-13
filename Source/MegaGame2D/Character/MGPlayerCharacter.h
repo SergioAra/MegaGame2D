@@ -14,6 +14,7 @@ class AMGEnemy;
 class UAsyncRootMovement;
 class AMGGameMode;
 class USoundCue;
+class UAudioComponent;
 
 UCLASS()
 class MEGAGAME2D_API AMGPlayerCharacter : public AMG2DCharacter
@@ -39,6 +40,7 @@ public:
 	void InputShootPressed();
 	void InputShootHeld(float InHoldTime);
 	void InputShootReleased(float InHoldTime);
+	void StopChargeSound();
 	void InputSlide();
 
 	virtual void PossessedBy(AController* NewController) override;
@@ -222,6 +224,12 @@ protected:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "MG|Audio")
 	TObjectPtr<USoundCue> RespawnSound;
 
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "MG|Audio")
+	TObjectPtr<USoundCue> PartialChargeSound;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "MG|Audio")
+	TObjectPtr<USoundCue> FullChargeSound;
+
 	UPROPERTY(Transient, VisibleAnywhere, BlueprintReadOnly, Category = "MG|State")
 	TObjectPtr<AMGPlayerController> PlayerController = nullptr;
 
@@ -255,7 +263,6 @@ protected:
 	UPROPERTY(Transient, VisibleAnywhere, BlueprintReadOnly, Category = "MG|State")
 	float LastShootHoldTime = 0.f;
 
-
 	UPROPERTY(Transient)
 	FTimerHandle ShootingStateTimerHandle;
 
@@ -273,4 +280,10 @@ protected:
 
 	UPROPERTY(Transient)
 	TObjectPtr<AMGGameMode> MGGameMode = nullptr;
+
+	UPROPERTY(Transient)
+	TObjectPtr<UAudioComponent> FullChargeSoundAudioComp = nullptr;
+
+	UPROPERTY(Transient)
+	TObjectPtr<UAudioComponent> PartialChargeSoundAudioComp = nullptr;
 };

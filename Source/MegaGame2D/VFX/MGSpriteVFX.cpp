@@ -7,7 +7,7 @@
 
 namespace
 {
-	static FName SpriteCollisionProfileName(TEXT("NoCollision"));
+	static const FName SpriteCollisionProfileName(TEXT("NoCollision"));
 }
 
 
