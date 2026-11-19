@@ -3,6 +3,7 @@
 
 #include "Props/MGCheckpoint.h"
 #include "Character/MGPlayerCharacter.h"
+#include "MG2DDefinitions.h"
 
 #include "Components/BoxComponent.h"
 
@@ -14,7 +15,7 @@ AMGCheckpoint::AMGCheckpoint()
 
 	TriggerComponent = CreateDefaultSubobject<UBoxComponent>(TEXT("TriggerComponent"));
 	TriggerComponent->SetCollisionResponseToAllChannels(ECollisionResponse::ECR_Ignore);
-	TriggerComponent->SetCollisionResponseToChannel(ECollisionChannel::ECC_Pawn, ECollisionResponse::ECR_Overlap);
+	TriggerComponent->SetCollisionResponseToChannel(ECC_Player, ECollisionResponse::ECR_Overlap);
 
 }
 

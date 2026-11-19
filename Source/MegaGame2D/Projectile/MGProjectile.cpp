@@ -12,12 +12,9 @@
 #include "Blueprint/WidgetLayoutLibrary.h"
 #include "Sound/SoundCue.h"
 
-namespace
-{
-	static const FName SpriteCollisionProfileName(TEXT("NoCollision"));
-	static const FName ProjectileCollisionProfileName(TEXT("Projectile"));
-	static const float LowDeltaTime(0.1f);
-}
+static const FName SpriteCollisionProfileName(TEXT("NoCollision"));
+static const FName ProjectileCollisionProfileName(TEXT("Projectile"));
+static const float LowDeltaTime(0.1f);
 
 // Sets default values
 AMGProjectile::AMGProjectile()

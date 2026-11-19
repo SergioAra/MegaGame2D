@@ -5,12 +5,7 @@
 
 #include "PaperFlipbookComponent.h"
 
-namespace
-{
-	static const FName SpriteCollisionProfileName(TEXT("NoCollision"));
-}
-
-
+static const FName SpriteCollisionProfileName(TEXT("NoCollision"));
 
 // Sets default values
 AMGSpriteVFX::AMGSpriteVFX()

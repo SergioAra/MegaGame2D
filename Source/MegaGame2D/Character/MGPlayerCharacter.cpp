@@ -21,13 +21,9 @@
 #include "Components/AudioComponent.h"
 #include "EngineUtils.h" 
 
-namespace
-{
-	static const FName AnimationJumpStunName(TEXT("JumpStun"));
-	static const float LowDeltaTime(0.1f);
-	static const FName CharacterCollisionProfileName(TEXT("2DCharacter"));
-}
-
+static const FName AnimationJumpStunName(TEXT("JumpStun"));
+static const float LowDeltaTime(0.1f);
+static const FName CharacterCollisionProfileName(TEXT("2DCharacter"));
 
 AMGPlayerCharacter::AMGPlayerCharacter()
 {
