@@ -15,6 +15,7 @@ class UAsyncRootMovement;
 class AMGGameMode;
 class USoundCue;
 class UAudioComponent;
+class AMGLadderVolume;
 
 UCLASS()
 class MEGAGAME2D_API AMGPlayerCharacter : public AMG2DCharacter
@@ -82,6 +83,10 @@ public:
 
 	virtual void OnRespawn();
 
+	void AddLadder(AMGLadderVolume* LadderVolume);
+
+	void RemoveLadder(AMGLadderVolume* LadderVolume);
+
 protected:
 
 	virtual void BeginPlay() override;
@@ -103,6 +108,10 @@ protected:
 
 	UFUNCTION()
 	virtual void LowTick();
+
+	void StopClimbing();
+
+	void StartClimbing();
 
 	void CheckInputSlideCancel(const float HorizontalMovementProd);
 
@@ -262,6 +271,15 @@ protected:
 
 	UPROPERTY(Transient, VisibleAnywhere, BlueprintReadOnly, Category = "MG|State")
 	float LastShootHoldTime = 0.f;
+
+	UPROPERTY(Transient, VisibleAnywhere, BlueprintReadOnly, Category = "MG|State")
+	bool b2DMovement = true;
+
+	UPROPERTY(Transient, VisibleAnywhere, BlueprintReadOnly, Category = "MG|State")
+	TArray<TObjectPtr<AMGLadderVolume>> OverlappingLadders;
+
+	UPROPERTY(Transient, VisibleAnywhere, BlueprintReadOnly, Category = "MG|State")
+	bool bIsClimbing = false;
 
 	UPROPERTY(Transient)
 	FTimerHandle ShootingStateTimerHandle;

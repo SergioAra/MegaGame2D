@@ -17,6 +17,7 @@ AMGCheckpoint::AMGCheckpoint()
 	TriggerComponent->SetCollisionResponseToAllChannels(ECollisionResponse::ECR_Ignore);
 	TriggerComponent->SetCollisionResponseToChannel(ECC_Player, ECollisionResponse::ECR_Overlap);
 
+	RootComponent = TriggerComponent;
 }
 
 // Called when the game starts or when spawned

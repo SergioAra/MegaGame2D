@@ -22,6 +22,7 @@
 #include "EngineUtils.h" 
 
 static const FName AnimationJumpStunName(TEXT("JumpStun"));
+static const FName AnimationJumpClimbName(TEXT("JumpClimb"));
 static const float LowDeltaTime(0.1f);
 static const FName CharacterCollisionProfileName(TEXT("2DCharacter"));
 
@@ -42,6 +43,7 @@ AMGPlayerCharacter::AMGPlayerCharacter()
 	{
 		MovementComponent->AirControl = 1.f;
 		MovementComponent->FallingLateralFriction = 50.f;
+		MovementComponent->BrakingDecelerationFlying = 10000.f;
 	}
 
 	UCapsuleComponent* CapsuleComp = GetCapsuleComponent();
@@ -65,7 +67,21 @@ void AMGPlayerCharacter::InputMove(const FVector2D& AxisValue)
 
 	LastInputDir = AxisValue;
 
-	AddMovementInput(FVector(LastInputDir.X, -LastInputDir.Y, 0.f));
+	float ZInput = 0.f;
+
+	if (!FMath::IsNearlyZero(LastInputDir.Y) && bIsClimbing)
+	{
+		ZInput = LastInputDir.Y;
+	}
+
+	if (b2DMovement)
+	{
+		AddMovementInput(FVector(LastInputDir.X, 0.f, ZInput));
+	}
+	else
+	{
+		//AddMovementInput(FVector(LastInputDir.X, -LastInputDir.Y, ZInput));
+	}
 
 	if (bIsGroundSliding)
 	{
@@ -422,6 +438,17 @@ void AMGPlayerCharacter::OnRespawn()
 	UGameplayStatics::PlaySound2D(this, RespawnSound);
 }
 
+void AMGPlayerCharacter::AddLadder(AMGLadderVolume* LadderVolume)
+{
+	OverlappingLadders.AddUnique(LadderVolume);
+}
+
+void AMGPlayerCharacter::RemoveLadder(AMGLadderVolume * LadderVolume)
+{
+	// Removing with swap since order doesn't matter
+	OverlappingLadders.RemoveSwap(LadderVolume);
+}
+
 void AMGPlayerCharacter::OnWalkingOffLedge_Implementation(const FVector& PreviousFloorImpactNormal, const FVector& PreviousFloorContactNormal, const FVector& PreviousLocation, float TimeDelta)
 {
 	Super::OnWalkingOffLedge_Implementation(PreviousFloorImpactNormal, PreviousFloorContactNormal, PreviousLocation, TimeDelta);
@@ -464,7 +491,7 @@ void AMGPlayerCharacter::OnEndOverlap(UPrimitiveComponent* OverlappedComponent, 
 	AMGEnemy* Enemy = Cast<AMGEnemy>(OtherActor);
 	if (Enemy && Enemy->GetCapsuleComponent() == OtherComp)
 	{
-		OverlappingEnemies.Remove(Enemy);
+		OverlappingEnemies.RemoveSwap(Enemy);
 	}
 }
 
@@ -477,6 +504,64 @@ void AMGPlayerCharacter::LowTick()
 	bIsWallSliding = CheckPressingAgainsWall(HorizontalMovementProd, CurrentForwardVector);
 
 	CheckInputSlideCancel(HorizontalMovementProd);
+
+	if (OverlappingLadders.Num() > 0)
+	{
+		if(!FMath::IsNearlyZero(LastInputDir.Y))
+		{
+			StartClimbing();
+		}
+	}
+	else
+	{
+		StopClimbing();
+	}
+}
+
+void AMGPlayerCharacter::StopClimbing()
+{
+	if (bIsClimbing)
+	{
+		UCharacterMovementComponent* MovementComponent = GetCharacterMovement();
+		if (!MovementComponent)
+		{
+			return;
+		}
+
+		bIsClimbing = false;
+		MovementComponent->SetMovementMode(EMovementMode::MOVE_Walking);
+	}
+}
+
+void AMGPlayerCharacter::StartClimbing()
+{
+	if (!bIsClimbing)
+	{
+		UCharacterMovementComponent* MovementComponent = GetCharacterMovement();
+		if (!MovementComponent)
+		{
+			return;
+		}
+
+		MovementComponent->SetMovementMode(EMovementMode::MOVE_Flying);
+		MovementComponent->Velocity = FVector::ZeroVector;
+		bIsClimbing = true;
+
+		if (bIsGroundSliding && AsyncSlideMovement)
+		{
+			AsyncSlideMovement->Cancel();
+		}
+
+		UPaperZDAnimationComponent* AnimationComp = GetAnimationComponent();
+		if (AnimationComp)
+		{
+			UPaperZDAnimInstance* AnimInstanceComp = AnimationComp->GetAnimInstance();
+			if (AnimInstanceComp)
+			{
+				AnimInstanceComp->JumpToNode(AnimationJumpClimbName);
+			}
+		}
+	}
 }
 
 void AMGPlayerCharacter::CheckInputSlideCancel(const float HorizontalMovementProd)
